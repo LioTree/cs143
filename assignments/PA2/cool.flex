@@ -54,6 +54,14 @@ extern YYSTYPE cool_yylval;
  */
 
 DARROW          =>
+ASSIGN          <-
+LE              <=
+SYNTAX          \{|\}|\(|\)|:|\+|-|\*|\/|~|<|=|;
+INTEGERS        [0-9]+
+TYPE_IDENTIFIER [A-Z][a-zA-Z0-9_]*    
+OBJECT_IDENTIFIER [a-z][a-zA-Z0-9_]*    
+NEWLINE         \n
+OTHER_WHITE_SPACE     \f|\r|\t|\v
 
 %%
 
@@ -66,6 +74,9 @@ DARROW          =>
   *  The multiple-character operators.
   */
 {DARROW}		{ return (DARROW); }
+{ASSIGN}		{ return (ASSIGN); }
+{LE}		    { return (LE); }
+{SYNTAX}     { return int(yytext[0]); }
 
 
  /*
@@ -91,6 +102,13 @@ DARROW          =>
 (?i:not)      { return NOT; }
 t(?i:rue)    { cool_yylval.boolean = 1;return BOOL_CONST; }
 f(?i:alse)    { cool_yylval.boolean = 0;return BOOL_CONST; }
+
+{INTEGERS}    { cool_yylval.symbol = inttable.add_string(yytext);return INT_CONST; }
+{TYPE_IDENTIFIER}  { cool_yylval.symbol = idtable.add_string(yytext);return TYPEID; }
+{OBJECT_IDENTIFIER}  { cool_yylval.symbol = idtable.add_string(yytext);return OBJECTID; }
+
+{NEWLINE}     { curr_lineno++; }
+{OTHER_WHITE_SPACE} {}
 
  /*
   *  String constants (C syntax)
