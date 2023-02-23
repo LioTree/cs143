@@ -14,7 +14,11 @@
 
 /* The compiler assumes these identifiers. */
 #define yylval cool_yylval
-#define yylex  cool_yylex
+/* #define yylex  cool_yylex */
+extern "C" int yylex(void);
+extern int cool_yylex(void) {
+    return yylex();
+}
 
 /* Max size of string constants */
 #define MAX_STR_CONST 1025
