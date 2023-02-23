@@ -63,12 +63,28 @@ OBJECT_IDENTIFIER [a-z][a-zA-Z0-9_]*
 NEWLINE         \n
 OTHER_WHITE_SPACE     \f|\r|\t|\v
 
+%s IN_COMMENT
+%s IN_COMMENT2
 %%
 
  /*
   *  Nested comments
   */
+<INITIAL>{
+  "(*"              BEGIN(IN_COMMENT);
+  "--"              BEGIN(IN_COMMENT2);
+}
+<IN_COMMENT>{
+  "*)"      BEGIN(INITIAL);
+  [^*\n]+   // eat comment in chunks
+  "*"       // eat the lone star
+  \n        curr_lineno++;
+}
 
+<IN_COMMENT2>{
+  .+       // eat the lone star
+  \n       { curr_lineno++;BEGIN(INITIAL); }
+}
 
  /*
   *  The multiple-character operators.
