@@ -67,11 +67,30 @@ DARROW          =>
   */
 {DARROW}		{ return (DARROW); }
 
+
  /*
   * Keywords are case-insensitive except for the values true and false,
   * which must begin with a lower-case letter.
   */
-
+(?i:class)  { return CLASS; }
+(?i:else)   { return ELSE; }
+(?i:fi)       { return FI; }
+(?i:if)       { return IF; }
+(?i:in)       { return IN; }
+(?i:inherits) { return INHERITS; }
+(?i:isvoid)   { return ISVOID; }
+(?i:let)      { return LET; }
+(?i:loop)     { return LOOP; }
+(?i:pool)     { return POOL; }
+(?i:then)     { return THEN; }
+(?i:while)    { return WHILE; }
+(?i:case)     { return CASE; }
+(?i:esac)     { return ESAC; }
+(?i:new)      { return NEW; }
+(?i:of)       { return OF; }
+(?i:not)      { return NOT; }
+t(?i:rue)    { cool_yylval.boolean = 1;return BOOL_CONST; }
+f(?i:alse)    { cool_yylval.boolean = 0;return BOOL_CONST; }
 
  /*
   *  String constants (C syntax)
