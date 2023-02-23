@@ -93,6 +93,10 @@ OTHER_WHITESPACE     \f|\r|\t|\v
 {DARROW}		{ return (DARROW); }
 {ASSIGN}		{ return (ASSIGN); }
 {LE}		    { return (LE); }
+
+ /*
+ * The single-character operators. 
+ */
 {SYNTAX}     { return int(yytext[0]); }
 
 
