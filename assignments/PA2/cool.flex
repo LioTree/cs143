@@ -61,7 +61,7 @@ INTEGERS        [0-9]+
 TYPE_IDENTIFIER [A-Z][a-zA-Z0-9_]*    
 OBJECT_IDENTIFIER [a-z][a-zA-Z0-9_]*    
 NEWLINE         \n
-OTHER_WHITE_SPACE     \f|\r|\t|\v
+OTHER_WHITESPACE     \f|\r|\t|\v
 
 %s IN_COMMENT
 %s IN_COMMENT2
@@ -74,6 +74,7 @@ OTHER_WHITE_SPACE     \f|\r|\t|\v
   "(*"              BEGIN(IN_COMMENT);
   "--"              BEGIN(IN_COMMENT2);
 }
+
 <IN_COMMENT>{
   "*)"      BEGIN(INITIAL);
   [^*\n]+   // eat comment in chunks
@@ -124,7 +125,7 @@ f(?i:alse)    { cool_yylval.boolean = 0;return BOOL_CONST; }
 {OBJECT_IDENTIFIER}  { cool_yylval.symbol = idtable.add_string(yytext);return OBJECTID; }
 
 {NEWLINE}     { curr_lineno++; }
-{OTHER_WHITE_SPACE} {}
+{OTHER_WHITESPACE} {}
 
  /*
   *  String constants (C syntax)
