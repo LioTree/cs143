@@ -146,7 +146,7 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
   *
   */
 <INITIAL>{
-  "\""       { string_buf_ptr = string_buf;BEGIN(IN_STRING); }
+  "\""       { string_buf_ptr = string_buf;*string_buf_ptr = '\0';BEGIN(IN_STRING); }
 }
 <IN_STRING>{
   \\\n       { printf("\\n error\n");exit(0); }

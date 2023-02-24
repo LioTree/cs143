@@ -1298,7 +1298,7 @@ YY_RULE_SETUP
 case 34:
 YY_RULE_SETUP
 #line 150 "cool.flex"
-{ string_buf_ptr = string_buf;BEGIN(IN_STRING); }
+{ string_buf_ptr = string_buf;*string_buf_ptr = '\0';BEGIN(IN_STRING); }
 	YY_BREAK
 
 
