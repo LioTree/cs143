@@ -62,7 +62,7 @@ INTEGERS        [0-9]+
 TYPE_IDENTIFIER [A-Z][a-zA-Z0-9_]*    
 OBJECT_IDENTIFIER [a-z][a-zA-Z0-9_]*    
 NEWLINE         \n
-OTHER_WHITESPACE     \f|\r|\t|\v
+OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
 
 %s IN_COMMENT
 %s IN_COMMENT2
