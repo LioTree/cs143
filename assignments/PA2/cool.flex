@@ -149,31 +149,30 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
   "\""       { string_buf_ptr = string_buf;*string_buf_ptr = '\0';BEGIN(IN_STRING); }
 }
 <IN_STRING>{
-  \\\n       { printf("\\n error\n");exit(0); }
-  \\0        { printf("\\0 error\n");exit(0); }
-  \\.        { 
-              if((string_buf_ptr - string_buf) >= (MAX_STR_CONST - 2)) {
-                printf("string too long");
-                exit(0);
-              }
-              switch(yytext[1]) {
-                case 'b':
-                  *string_buf_ptr++ = '\b';
-                  break;
-                case 't':
-                  *string_buf_ptr++ = '\t';
-                  break;
-                case 'n':
-                  *string_buf_ptr++ = '\n';
-                  break;
-                case 'f':
-                  *string_buf_ptr++ = '\f';
-                  break;
-                default:
-                  *string_buf_ptr++ = yytext[1];
-              }
-              *string_buf_ptr = '\0'; 
-             }
+  \x00        { printf("\\0 error\n");exit(0); }
+  \\(.|\n)       { 
+                  if((string_buf_ptr - string_buf) >= (MAX_STR_CONST - 2)) {
+                    printf("string too long");
+                    exit(0);
+                  }
+                  switch(yytext[1]) {
+                    case 'b':
+                      *string_buf_ptr++ = '\b';
+                      break;
+                    case 't':
+                      *string_buf_ptr++ = '\t';
+                      break;
+                    case 'n':
+                      *string_buf_ptr++ = '\n';
+                      break;
+                    case 'f':
+                      *string_buf_ptr++ = '\f';
+                      break;
+                    default:
+                      *string_buf_ptr++ = yytext[1];
+                  }
+                  *string_buf_ptr = '\0'; 
+                }
   "\""       { cool_yylval.symbol = stringtable.add_string(string_buf);BEGIN(INITIAL);return STR_CONST; }
   .          { 
               if((string_buf_ptr - string_buf) >= (MAX_STR_CONST - 2)) {
