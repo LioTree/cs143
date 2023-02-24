@@ -157,6 +157,7 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
 }
 <IN_STRING>{
   \x00        { BEGIN(IN_STRING_ERROR);cool_yylval.error_msg = "String contains null character.";return ERROR; }
+  \n          { curr_lineno++;BEGIN(INITIAL);cool_yylval.error_msg = "Unterminated string constant";return ERROR; }
   \\(.|\n)       { 
                   if((string_buf_ptr - string_buf) >= (MAX_STR_CONST - 1)) {
                     BEGIN(IN_STRING_ERROR);
