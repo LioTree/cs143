@@ -67,6 +67,7 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
 %s IN_COMMENT
 %s IN_COMMENT2
 %s IN_STRING
+%s IN_STRING_TOO_LONG
 %%
 
  /*
@@ -149,11 +150,12 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
   "\""       { string_buf_ptr = string_buf;*string_buf_ptr = '\0';BEGIN(IN_STRING); }
 }
 <IN_STRING>{
-  \x00        { printf("\\0 error\n");exit(0); }
+  \x00        { cool_yylval.error_msg = "String contains null character.";return ERROR; }
   \\(.|\n)       { 
-                  if((string_buf_ptr - string_buf) >= (MAX_STR_CONST - 2)) {
-                    printf("string too long");
-                    exit(0);
+                  if((string_buf_ptr - string_buf) >= (MAX_STR_CONST - 1)) {
+                    BEGIN(IN_STRING_TOO_LONG);
+                    cool_yylval.error_msg = "String constant too long";
+                    return ERROR;
                   }
                   switch(yytext[1]) {
                     case 'b':
@@ -172,16 +174,25 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
                       *string_buf_ptr++ = yytext[1];
                   }
                   *string_buf_ptr = '\0'; 
+                  if(yytext[1] == '\n') {
+                    curr_lineno++;
+                  }
                 }
   "\""       { cool_yylval.symbol = stringtable.add_string(string_buf);BEGIN(INITIAL);return STR_CONST; }
   .          { 
-              if((string_buf_ptr - string_buf) >= (MAX_STR_CONST - 2)) {
-                printf("string too long");
-                exit(0);
+              if((string_buf_ptr - string_buf) >= (MAX_STR_CONST - 1)) {
+                BEGIN(IN_STRING_TOO_LONG);
+                cool_yylval.error_msg = "String constant too long";
+                return ERROR;
               }
               *string_buf_ptr++ = yytext[0];
               *string_buf_ptr = '\0'; 
              }
+}
+
+<IN_STRING_TOO_LONG>{
+  "\""          BEGIN(INITIAL);
+  [^"]*         {}
 }
 
 <INITIAL>{
