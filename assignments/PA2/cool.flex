@@ -90,6 +90,11 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
   "*"       // eat the lone star
   "("       // eat the lone left bracket
   \n        curr_lineno++;
+  <<EOF>>    {
+              BEGIN(0);
+              cool_yylval.error_msg = "EOF in comment";
+              return ERROR;
+             }
 }
 
 <IN_COMMENT2>{
@@ -187,6 +192,11 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
               }
               *string_buf_ptr++ = yytext[0];
               *string_buf_ptr = '\0'; 
+             }
+  <<EOF>>    {
+              BEGIN(0);
+              cool_yylval.error_msg = "EOF in string constant";
+              return ERROR;
              }
 }
 
