@@ -67,7 +67,7 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
 %s IN_COMMENT
 %s IN_COMMENT2
 %s IN_STRING
-%s IN_STRING_TOO_LONG
+%s IN_STRING_ERROR
 %%
 
  /*
@@ -76,6 +76,7 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
 <INITIAL>{
   "(*"              { comment_count++;BEGIN(IN_COMMENT); }
   "--"              BEGIN(IN_COMMENT2);
+  "*)"              { cool_yylval.error_msg = "Unmatched *)";return ERROR; }
 }
 
 <IN_COMMENT>{
@@ -155,10 +156,10 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
   "\""       { string_buf_ptr = string_buf;*string_buf_ptr = '\0';BEGIN(IN_STRING); }
 }
 <IN_STRING>{
-  \x00        { cool_yylval.error_msg = "String contains null character.";return ERROR; }
+  \x00        { BEGIN(IN_STRING_ERROR);cool_yylval.error_msg = "String contains null character.";return ERROR; }
   \\(.|\n)       { 
                   if((string_buf_ptr - string_buf) >= (MAX_STR_CONST - 1)) {
-                    BEGIN(IN_STRING_TOO_LONG);
+                    BEGIN(IN_STRING_ERROR);
                     cool_yylval.error_msg = "String constant too long";
                     return ERROR;
                   }
@@ -175,6 +176,10 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
                     case 'f':
                       *string_buf_ptr++ = '\f';
                       break;
+                    case '\x00':
+                    BEGIN(IN_STRING_ERROR);
+                      cool_yylval.error_msg = "String contains escaped null character.";
+                      return ERROR;
                     default:
                       *string_buf_ptr++ = yytext[1];
                   }
@@ -186,7 +191,7 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
   "\""       { cool_yylval.symbol = stringtable.add_string(string_buf);BEGIN(INITIAL);return STR_CONST; }
   .          { 
               if((string_buf_ptr - string_buf) >= (MAX_STR_CONST - 1)) {
-                BEGIN(IN_STRING_TOO_LONG);
+                BEGIN(IN_STRING_ERROR);
                 cool_yylval.error_msg = "String constant too long";
                 return ERROR;
               }
@@ -200,9 +205,10 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
              }
 }
 
-<IN_STRING_TOO_LONG>{
+<IN_STRING_ERROR>{
   "\""          BEGIN(INITIAL);
-  [^"]*         {}
+  \n            BEGIN(INITIAL);
+  [^"\n]*         {}
 }
 
 <INITIAL>{
@@ -212,6 +218,13 @@ OTHER_WHITESPACE     [ ]|\f|\r|\t|\v
 
   {NEWLINE}     { curr_lineno++; }
   {OTHER_WHITESPACE} {}
+  .             { 
+                  char *error_msg = (char *)yyalloc(2); 
+                  error_msg[0] = yytext[0];
+                  error_msg[1] = '\0';
+                  cool_yylval.error_msg = error_msg; 
+                  return ERROR;
+                }
 }
 
 %%
