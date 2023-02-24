@@ -66,6 +66,7 @@ OTHER_WHITESPACE     \f|\r|\t|\v
 
 %s IN_COMMENT
 %s IN_COMMENT2
+%s IN_STRING
 %%
 
  /*
@@ -98,46 +99,45 @@ OTHER_WHITESPACE     \f|\r|\t|\v
  /*
   *  The multiple-character operators.
   */
-{DARROW}		{ return (DARROW); }
-{ASSIGN}		{ return (ASSIGN); }
-{LE}		    { return (LE); }
+<INITIAL>{
+  {DARROW}		{ return (DARROW); }
+  {ASSIGN}		{ return (ASSIGN); }
+  {LE}		    { return (LE); }
+}
 
  /*
- * The single-character operators. 
- */
-{SYNTAX}     { return int(yytext[0]); }
-
+  * The single-character operators. 
+  */
+<INITIAL>{
+  {SYNTAX}     { return int(yytext[0]); }
+}
 
  /*
   * Keywords are case-insensitive except for the values true and false,
   * which must begin with a lower-case letter.
   */
-(?i:class)  { return CLASS; }
-(?i:else)   { return ELSE; }
-(?i:fi)       { return FI; }
-(?i:if)       { return IF; }
-(?i:in)       { return IN; }
-(?i:inherits) { return INHERITS; }
-(?i:isvoid)   { return ISVOID; }
-(?i:let)      { return LET; }
-(?i:loop)     { return LOOP; }
-(?i:pool)     { return POOL; }
-(?i:then)     { return THEN; }
-(?i:while)    { return WHILE; }
-(?i:case)     { return CASE; }
-(?i:esac)     { return ESAC; }
-(?i:new)      { return NEW; }
-(?i:of)       { return OF; }
-(?i:not)      { return NOT; }
-t(?i:rue)    { cool_yylval.boolean = 1;return BOOL_CONST; }
-f(?i:alse)    { cool_yylval.boolean = 0;return BOOL_CONST; }
+<INITIAL>{
+  (?i:class)  { return CLASS; }
+  (?i:else)   { return ELSE; }
+  (?i:fi)       { return FI; }
+  (?i:if)       { return IF; }
+  (?i:in)       { return IN; }
+  (?i:inherits) { return INHERITS; }
+  (?i:isvoid)   { return ISVOID; }
+  (?i:let)      { return LET; }
+  (?i:loop)     { return LOOP; }
+  (?i:pool)     { return POOL; }
+  (?i:then)     { return THEN; }
+  (?i:while)    { return WHILE; }
+  (?i:case)     { return CASE; }
+  (?i:esac)     { return ESAC; }
+  (?i:new)      { return NEW; }
+  (?i:of)       { return OF; }
+  (?i:not)      { return NOT; }
+  t(?i:rue)    { cool_yylval.boolean = 1;return BOOL_CONST; }
+  f(?i:alse)    { cool_yylval.boolean = 0;return BOOL_CONST; }
+}
 
-{INTEGERS}    { cool_yylval.symbol = inttable.add_string(yytext);return INT_CONST; }
-{TYPE_IDENTIFIER}  { cool_yylval.symbol = idtable.add_string(yytext);return TYPEID; }
-{OBJECT_IDENTIFIER}  { cool_yylval.symbol = idtable.add_string(yytext);return OBJECTID; }
-
-{NEWLINE}     { curr_lineno++; }
-{OTHER_WHITESPACE} {}
 
  /*
   *  String constants (C syntax)
@@ -145,6 +145,53 @@ f(?i:alse)    { cool_yylval.boolean = 0;return BOOL_CONST; }
   *  \n \t \b \f, the result is c.
   *
   */
+<INITIAL>{
+  "\""       { string_buf_ptr = string_buf;BEGIN(IN_STRING); }
+}
+<IN_STRING>{
+  \\\n       { printf("\\n error\n");exit(0); }
+  \\0        { printf("\\0 error\n");exit(0); }
+  \\.        { 
+              if((string_buf_ptr - string_buf) >= (MAX_STR_CONST - 2)) {
+                printf("string too long");
+                exit(0);
+              }
+              switch(yytext[1]) {
+                case 'b':
+                  *string_buf_ptr++ = '\b';
+                  break;
+                case 't':
+                  *string_buf_ptr++ = '\t';
+                  break;
+                case 'n':
+                  *string_buf_ptr++ = '\n';
+                  break;
+                case 'f':
+                  *string_buf_ptr++ = '\f';
+                  break;
+                default:
+                  *string_buf_ptr++ = yytext[1];
+              }
+              *string_buf_ptr = '\0'; 
+             }
+  "\""       { cool_yylval.symbol = stringtable.add_string(string_buf);BEGIN(INITIAL);return STR_CONST; }
+  .          { 
+              if((string_buf_ptr - string_buf) >= (MAX_STR_CONST - 2)) {
+                printf("string too long");
+                exit(0);
+              }
+              *string_buf_ptr++ = yytext[0];
+              *string_buf_ptr = '\0'; 
+             }
+}
 
+<INITIAL>{
+  {INTEGERS}    { cool_yylval.symbol = inttable.add_string(yytext);return INT_CONST; }
+  {TYPE_IDENTIFIER}  { cool_yylval.symbol = idtable.add_string(yytext);return TYPEID; }
+  {OBJECT_IDENTIFIER}  { cool_yylval.symbol = idtable.add_string(yytext);return OBJECTID; }
+
+  {NEWLINE}     { curr_lineno++; }
+  {OTHER_WHITESPACE} {}
+}
 
 %%
