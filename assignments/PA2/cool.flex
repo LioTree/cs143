@@ -57,7 +57,7 @@ int comment_count = 0;
 DARROW          =>
 ASSIGN          <-
 LE              <=
-SYNTAX          \{|\}|\(|\)|:|\+|-|\*|\/|~|<|=|;|,|\.
+SYNTAX          \{|\}|\(|\)|:|\+|-|\*|\/|~|<|=|;|,|\.|@
 INTEGERS        [0-9]+
 TYPE_IDENTIFIER [A-Z][a-zA-Z0-9_]*    
 OBJECT_IDENTIFIER [a-z][a-zA-Z0-9_]*    
