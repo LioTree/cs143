@@ -46,6 +46,7 @@ extern YYSTYPE cool_yylval;
 /*
  *  Add Your own definitions here
  */
+int comment_count = 0;
 
 %}
 
@@ -71,14 +72,21 @@ OTHER_WHITESPACE     \f|\r|\t|\v
   *  Nested comments
   */
 <INITIAL>{
-  "(*"              BEGIN(IN_COMMENT);
+  "(*"              { comment_count++;BEGIN(IN_COMMENT); }
   "--"              BEGIN(IN_COMMENT2);
 }
 
 <IN_COMMENT>{
-  "*)"      BEGIN(INITIAL);
-  [^*\n]+   // eat comment in chunks
+  "(*"      comment_count++;
+  "*)"      { 
+              comment_count--;
+              if(!comment_count) {
+                BEGIN(INITIAL); 
+              }
+            }
+  [^*\(\n]+   // eat comment in chunks
   "*"       // eat the lone star
+  "("       // eat the lone left bracket
   \n        curr_lineno++;
 }
 
