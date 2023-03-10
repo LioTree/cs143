@@ -1,0 +1,6 @@
+PA?/lexer
+PA?/cgen
+PA?/semant
+PA?/*.o
+PA?/pa?-grading.pl
+PA?/grading/*
