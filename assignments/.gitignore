@@ -3,5 +3,9 @@ PA?/cgen
 PA?/semant
 PA?/parser
 PA?/*.o
+PA?/*.d
+PA?/*.output
+PA3/cool-parse.cc
+PA3/cool-tab.c
 PA?/pa?-grading.pl
 PA?/grading/*
