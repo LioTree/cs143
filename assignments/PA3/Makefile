@@ -43,6 +43,12 @@ ${OUTPUT}:	parser good.cl bad.cl
 parser: ${OBJS}
 	${CC} ${CFLAGS} ${OBJS} ${LIB} -o parser
 
+graph: cool.y
+	bison ${BFLAGS} --graph cool.y
+	dot cool.dot -T png -o cool.png
+	rm cool.dot
+	mv cool.png ~/D/source/
+
 .cc.o:
 	${CC} ${CFLAGS} -c $<
 
