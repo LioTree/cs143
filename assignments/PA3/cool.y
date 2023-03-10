@@ -208,7 +208,10 @@
     { $$ = formal($1,$3); }
     ;
 
-    expr : INT_CONST // undone
+    expr : OBJECTID ASSIGN expr
+    { $$ = assign($1,$3); }
+    |
+    INT_CONST
     { $$ = int_const($1); }
     ;
 

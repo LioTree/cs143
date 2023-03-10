@@ -52,7 +52,8 @@
 
    17 formal: OBJECTID ':' TYPEID
 
-   18 expr: INT_CONST
+   18 expr: OBJECTID ASSIGN expr
+   19     | INT_CONST
 
 
 终结语词，附有它们出现处的规则
@@ -84,11 +85,11 @@
     NEW (273)
     ISVOID (274)
     STR_CONST <symbol> (275)
-    INT_CONST <symbol> (276) 18
+    INT_CONST <symbol> (276) 19
     BOOL_CONST <boolean> (277)
     TYPEID <symbol> (278) 4 5 6 7 11 12 13 17
-    OBJECTID <symbol> (279) 11 12 13 17
-    ASSIGN (280) 13
+    OBJECTID <symbol> (279) 11 12 13 17 18
+    ASSIGN (280) 13 18
     NOT (281)
     LE (282)
     ERROR (283)
@@ -126,8 +127,8 @@
         on left: 17
         on right: 15 16
     expr <expression> (46)
-        on left: 18
-        on right: 11 12 13
+        on left: 18 19
+        on right: 11 12 13 18
 
 
 状态 0
@@ -441,8 +442,9 @@
    13 feature: OBJECTID ':' TYPEID ASSIGN . expr ';'
 
     INT_CONST  偏移，并进入状态 43
+    OBJECTID   偏移，并进入状态 44
 
-    expr  转到状态 44
+    expr  转到状态 45
 
 
 状态 37
@@ -470,14 +472,14 @@
 
    12 feature: OBJECTID '(' dummy_formal_list ')' ':' . TYPEID '{' expr '}' ';'
 
-    TYPEID  偏移，并进入状态 45
+    TYPEID  偏移，并进入状态 46
 
 
 状态 41
 
    11 feature: OBJECTID '(' formals ')' ':' . TYPEID '{' expr '}' ';'
 
-    TYPEID  偏移，并进入状态 46
+    TYPEID  偏移，并进入状态 47
 
 
 状态 42
@@ -489,93 +491,119 @@
 
 状态 43
 
-   18 expr: INT_CONST .
+   19 expr: INT_CONST .
 
-    $default  使用规则 18 以归约 (expr)
+    $default  使用规则 19 以归约 (expr)
 
 
 状态 44
 
-   13 feature: OBJECTID ':' TYPEID ASSIGN expr . ';'
+   18 expr: OBJECTID . ASSIGN expr
 
-    ';'  偏移，并进入状态 47
+    ASSIGN  偏移，并进入状态 48
 
 
 状态 45
 
-   12 feature: OBJECTID '(' dummy_formal_list ')' ':' TYPEID . '{' expr '}' ';'
+   13 feature: OBJECTID ':' TYPEID ASSIGN expr . ';'
 
-    '{'  偏移，并进入状态 48
+    ';'  偏移，并进入状态 49
 
 
 状态 46
 
-   11 feature: OBJECTID '(' formals ')' ':' TYPEID . '{' expr '}' ';'
+   12 feature: OBJECTID '(' dummy_formal_list ')' ':' TYPEID . '{' expr '}' ';'
 
-    '{'  偏移，并进入状态 49
+    '{'  偏移，并进入状态 50
 
 
 状态 47
+
+   11 feature: OBJECTID '(' formals ')' ':' TYPEID . '{' expr '}' ';'
+
+    '{'  偏移，并进入状态 51
+
+
+状态 48
+
+   18 expr: OBJECTID ASSIGN . expr
+
+    INT_CONST  偏移，并进入状态 43
+    OBJECTID   偏移，并进入状态 44
+
+    expr  转到状态 52
+
+
+状态 49
 
    13 feature: OBJECTID ':' TYPEID ASSIGN expr ';' .
 
     $default  使用规则 13 以归约 (feature)
 
 
-状态 48
+状态 50
 
    12 feature: OBJECTID '(' dummy_formal_list ')' ':' TYPEID '{' . expr '}' ';'
 
     INT_CONST  偏移，并进入状态 43
+    OBJECTID   偏移，并进入状态 44
 
-    expr  转到状态 50
-
-
-状态 49
-
-   11 feature: OBJECTID '(' formals ')' ':' TYPEID '{' . expr '}' ';'
-
-    INT_CONST  偏移，并进入状态 43
-
-    expr  转到状态 51
-
-
-状态 50
-
-   12 feature: OBJECTID '(' dummy_formal_list ')' ':' TYPEID '{' expr . '}' ';'
-
-    '}'  偏移，并进入状态 52
+    expr  转到状态 53
 
 
 状态 51
 
-   11 feature: OBJECTID '(' formals ')' ':' TYPEID '{' expr . '}' ';'
+   11 feature: OBJECTID '(' formals ')' ':' TYPEID '{' . expr '}' ';'
 
-    '}'  偏移，并进入状态 53
+    INT_CONST  偏移，并进入状态 43
+    OBJECTID   偏移，并进入状态 44
+
+    expr  转到状态 54
 
 
 状态 52
 
-   12 feature: OBJECTID '(' dummy_formal_list ')' ':' TYPEID '{' expr '}' . ';'
+   18 expr: OBJECTID ASSIGN expr .
 
-    ';'  偏移，并进入状态 54
+    $default  使用规则 18 以归约 (expr)
 
 
 状态 53
 
-   11 feature: OBJECTID '(' formals ')' ':' TYPEID '{' expr '}' . ';'
+   12 feature: OBJECTID '(' dummy_formal_list ')' ':' TYPEID '{' expr . '}' ';'
 
-    ';'  偏移，并进入状态 55
+    '}'  偏移，并进入状态 55
 
 
 状态 54
+
+   11 feature: OBJECTID '(' formals ')' ':' TYPEID '{' expr . '}' ';'
+
+    '}'  偏移，并进入状态 56
+
+
+状态 55
+
+   12 feature: OBJECTID '(' dummy_formal_list ')' ':' TYPEID '{' expr '}' . ';'
+
+    ';'  偏移，并进入状态 57
+
+
+状态 56
+
+   11 feature: OBJECTID '(' formals ')' ':' TYPEID '{' expr '}' . ';'
+
+    ';'  偏移，并进入状态 58
+
+
+状态 57
 
    12 feature: OBJECTID '(' dummy_formal_list ')' ':' TYPEID '{' expr '}' ';' .
 
     $default  使用规则 12 以归约 (feature)
 
 
-状态 55
+状态 58
 
    11 feature: OBJECTID '(' formals ')' ':' TYPEID '{' expr '}' ';' .
 
