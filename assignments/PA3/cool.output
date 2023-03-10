@@ -16,10 +16,7 @@
     NEW
     ISVOID
     STR_CONST
-    INT_CONST
     BOOL_CONST
-    OBJECTID
-    ASSIGN
     NOT
     LE
     ERROR
@@ -36,23 +33,45 @@
 
     4 class: CLASS TYPEID '{' dummy_feature_list '}' ';'
     5      | CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list '}' ';'
+    6      | CLASS TYPEID '{' features '}' ';'
+    7      | CLASS TYPEID INHERITS TYPEID '{' features '}' ';'
 
-    6 dummy_feature_list: %empty
+    8 dummy_feature_list: %empty
+
+    9 features: feature
+   10         | features feature
+
+   11 feature: OBJECTID '(' formals ')' ':' TYPEID '{' expr '}' ';'
+   12        | OBJECTID '(' dummy_formal_list ')' ':' TYPEID '{' expr '}' ';'
+   13        | OBJECTID ':' TYPEID ASSIGN expr ';'
+
+   14 dummy_formal_list: %empty
+
+   15 formals: formal
+   16        | formals ',' formal
+
+   17 formal: OBJECTID ':' TYPEID
+
+   18 expr: INT_CONST
 
 
 终结语词，附有它们出现处的规则
 
     $end (0) 0
-    ';' (59) 4 5
-    '{' (123) 4 5
-    '}' (125) 4 5
+    '(' (40) 11 12
+    ')' (41) 11 12
+    ',' (44) 16
+    ':' (58) 11 12 13 17
+    ';' (59) 4 5 6 7 11 12 13
+    '{' (123) 4 5 6 7 11 12
+    '}' (125) 4 5 6 7 11 12
     error (256)
-    CLASS (258) 4 5
+    CLASS (258) 4 5 6 7
     ELSE (259)
     FI (260)
     IF (261)
     IN (262)
-    INHERITS (263) 5
+    INHERITS (263) 5 7
     LET (264)
     LOOP (265)
     POOL (266)
@@ -65,11 +84,11 @@
     NEW (273)
     ISVOID (274)
     STR_CONST <symbol> (275)
-    INT_CONST <symbol> (276)
+    INT_CONST <symbol> (276) 18
     BOOL_CONST <boolean> (277)
-    TYPEID <symbol> (278) 4 5
-    OBJECTID <symbol> (279)
-    ASSIGN (280)
+    TYPEID <symbol> (278) 4 5 6 7 11 12 13 17
+    OBJECTID <symbol> (279) 11 12 13 17
+    ASSIGN (280) 13
     NOT (281)
     LE (282)
     ERROR (283)
@@ -77,20 +96,38 @@
 
 非终结语词，附有它们出现处的规则
 
-    $accept (32)
+    $accept (36)
         on left: 0
-    program <program> (33)
+    program <program> (37)
         on left: 1
         on right: 0
-    class_list <classes> (34)
+    class_list <classes> (38)
         on left: 2 3
         on right: 1 3
-    class <class_> (35)
-        on left: 4 5
+    class <class_> (39)
+        on left: 4 5 6 7
         on right: 2 3
-    dummy_feature_list <features> (36)
-        on left: 6
+    dummy_feature_list <features> (40)
+        on left: 8
         on right: 4 5
+    features <features> (41)
+        on left: 9 10
+        on right: 6 7 10
+    feature <feature> (42)
+        on left: 11 12 13
+        on right: 9 10
+    dummy_formal_list <formals> (43)
+        on left: 14
+        on right: 12
+    formals <formals> (44)
+        on left: 15 16
+        on right: 11 16
+    formal <formal> (45)
+        on left: 17
+        on right: 15 16
+    expr <expression> (46)
+        on left: 18
+        on right: 11 12 13
 
 
 状态 0
@@ -108,6 +145,8 @@
 
     4 class: CLASS . TYPEID '{' dummy_feature_list '}' ';'
     5      | CLASS . TYPEID INHERITS TYPEID '{' dummy_feature_list '}' ';'
+    6      | CLASS . TYPEID '{' features '}' ';'
+    7      | CLASS . TYPEID INHERITS TYPEID '{' features '}' ';'
 
     TYPEID  偏移，并进入状态 5
 
@@ -142,6 +181,8 @@
 
     4 class: CLASS TYPEID . '{' dummy_feature_list '}' ';'
     5      | CLASS TYPEID . INHERITS TYPEID '{' dummy_feature_list '}' ';'
+    6      | CLASS TYPEID . '{' features '}' ';'
+    7      | CLASS TYPEID . INHERITS TYPEID '{' features '}' ';'
 
     INHERITS  偏移，并进入状态 8
     '{'       偏移，并进入状态 9
@@ -164,6 +205,7 @@
 状态 8
 
     5 class: CLASS TYPEID INHERITS . TYPEID '{' dummy_feature_list '}' ';'
+    7      | CLASS TYPEID INHERITS . TYPEID '{' features '}' ';'
 
     TYPEID  偏移，并进入状态 10
 
@@ -171,65 +213,370 @@
 状态 9
 
     4 class: CLASS TYPEID '{' . dummy_feature_list '}' ';'
+    6      | CLASS TYPEID '{' . features '}' ';'
 
-    $default  使用规则 6 以归约 (dummy_feature_list)
+    OBJECTID  偏移，并进入状态 11
 
-    dummy_feature_list  转到状态 11
+    $default  使用规则 8 以归约 (dummy_feature_list)
+
+    dummy_feature_list  转到状态 12
+    features            转到状态 13
+    feature             转到状态 14
 
 
 状态 10
 
     5 class: CLASS TYPEID INHERITS TYPEID . '{' dummy_feature_list '}' ';'
+    7      | CLASS TYPEID INHERITS TYPEID . '{' features '}' ';'
 
-    '{'  偏移，并进入状态 12
+    '{'  偏移，并进入状态 15
 
 
 状态 11
 
-    4 class: CLASS TYPEID '{' dummy_feature_list . '}' ';'
+   11 feature: OBJECTID . '(' formals ')' ':' TYPEID '{' expr '}' ';'
+   12        | OBJECTID . '(' dummy_formal_list ')' ':' TYPEID '{' expr '}' ';'
+   13        | OBJECTID . ':' TYPEID ASSIGN expr ';'
 
-    '}'  偏移，并进入状态 13
+    '('  偏移，并进入状态 16
+    ':'  偏移，并进入状态 17
 
 
 状态 12
 
-    5 class: CLASS TYPEID INHERITS TYPEID '{' . dummy_feature_list '}' ';'
+    4 class: CLASS TYPEID '{' dummy_feature_list . '}' ';'
 
-    $default  使用规则 6 以归约 (dummy_feature_list)
-
-    dummy_feature_list  转到状态 14
+    '}'  偏移，并进入状态 18
 
 
 状态 13
 
-    4 class: CLASS TYPEID '{' dummy_feature_list '}' . ';'
+    6 class: CLASS TYPEID '{' features . '}' ';'
+   10 features: features . feature
 
-    ';'  偏移，并进入状态 15
+    OBJECTID  偏移，并进入状态 11
+    '}'       偏移，并进入状态 19
+
+    feature  转到状态 20
 
 
 状态 14
 
-    5 class: CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list . '}' ';'
+    9 features: feature .
 
-    '}'  偏移，并进入状态 16
+    $default  使用规则 9 以归约 (features)
 
 
 状态 15
+
+    5 class: CLASS TYPEID INHERITS TYPEID '{' . dummy_feature_list '}' ';'
+    7      | CLASS TYPEID INHERITS TYPEID '{' . features '}' ';'
+
+    OBJECTID  偏移，并进入状态 11
+
+    $default  使用规则 8 以归约 (dummy_feature_list)
+
+    dummy_feature_list  转到状态 21
+    features            转到状态 22
+    feature             转到状态 14
+
+
+状态 16
+
+   11 feature: OBJECTID '(' . formals ')' ':' TYPEID '{' expr '}' ';'
+   12        | OBJECTID '(' . dummy_formal_list ')' ':' TYPEID '{' expr '}' ';'
+
+    OBJECTID  偏移，并进入状态 23
+
+    $default  使用规则 14 以归约 (dummy_formal_list)
+
+    dummy_formal_list  转到状态 24
+    formals            转到状态 25
+    formal             转到状态 26
+
+
+状态 17
+
+   13 feature: OBJECTID ':' . TYPEID ASSIGN expr ';'
+
+    TYPEID  偏移，并进入状态 27
+
+
+状态 18
+
+    4 class: CLASS TYPEID '{' dummy_feature_list '}' . ';'
+
+    ';'  偏移，并进入状态 28
+
+
+状态 19
+
+    6 class: CLASS TYPEID '{' features '}' . ';'
+
+    ';'  偏移，并进入状态 29
+
+
+状态 20
+
+   10 features: features feature .
+
+    $default  使用规则 10 以归约 (features)
+
+
+状态 21
+
+    5 class: CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list . '}' ';'
+
+    '}'  偏移，并进入状态 30
+
+
+状态 22
+
+    7 class: CLASS TYPEID INHERITS TYPEID '{' features . '}' ';'
+   10 features: features . feature
+
+    OBJECTID  偏移，并进入状态 11
+    '}'       偏移，并进入状态 31
+
+    feature  转到状态 20
+
+
+状态 23
+
+   17 formal: OBJECTID . ':' TYPEID
+
+    ':'  偏移，并进入状态 32
+
+
+状态 24
+
+   12 feature: OBJECTID '(' dummy_formal_list . ')' ':' TYPEID '{' expr '}' ';'
+
+    ')'  偏移，并进入状态 33
+
+
+状态 25
+
+   11 feature: OBJECTID '(' formals . ')' ':' TYPEID '{' expr '}' ';'
+   16 formals: formals . ',' formal
+
+    ')'  偏移，并进入状态 34
+    ','  偏移，并进入状态 35
+
+
+状态 26
+
+   15 formals: formal .
+
+    $default  使用规则 15 以归约 (formals)
+
+
+状态 27
+
+   13 feature: OBJECTID ':' TYPEID . ASSIGN expr ';'
+
+    ASSIGN  偏移，并进入状态 36
+
+
+状态 28
 
     4 class: CLASS TYPEID '{' dummy_feature_list '}' ';' .
 
     $default  使用规则 4 以归约 (class)
 
 
-状态 16
+状态 29
+
+    6 class: CLASS TYPEID '{' features '}' ';' .
+
+    $default  使用规则 6 以归约 (class)
+
+
+状态 30
 
     5 class: CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list '}' . ';'
 
-    ';'  偏移，并进入状态 17
+    ';'  偏移，并进入状态 37
 
 
-状态 17
+状态 31
+
+    7 class: CLASS TYPEID INHERITS TYPEID '{' features '}' . ';'
+
+    ';'  偏移，并进入状态 38
+
+
+状态 32
+
+   17 formal: OBJECTID ':' . TYPEID
+
+    TYPEID  偏移，并进入状态 39
+
+
+状态 33
+
+   12 feature: OBJECTID '(' dummy_formal_list ')' . ':' TYPEID '{' expr '}' ';'
+
+    ':'  偏移，并进入状态 40
+
+
+状态 34
+
+   11 feature: OBJECTID '(' formals ')' . ':' TYPEID '{' expr '}' ';'
+
+    ':'  偏移，并进入状态 41
+
+
+状态 35
+
+   16 formals: formals ',' . formal
+
+    OBJECTID  偏移，并进入状态 23
+
+    formal  转到状态 42
+
+
+状态 36
+
+   13 feature: OBJECTID ':' TYPEID ASSIGN . expr ';'
+
+    INT_CONST  偏移，并进入状态 43
+
+    expr  转到状态 44
+
+
+状态 37
 
     5 class: CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list '}' ';' .
 
     $default  使用规则 5 以归约 (class)
+
+
+状态 38
+
+    7 class: CLASS TYPEID INHERITS TYPEID '{' features '}' ';' .
+
+    $default  使用规则 7 以归约 (class)
+
+
+状态 39
+
+   17 formal: OBJECTID ':' TYPEID .
+
+    $default  使用规则 17 以归约 (formal)
+
+
+状态 40
+
+   12 feature: OBJECTID '(' dummy_formal_list ')' ':' . TYPEID '{' expr '}' ';'
+
+    TYPEID  偏移，并进入状态 45
+
+
+状态 41
+
+   11 feature: OBJECTID '(' formals ')' ':' . TYPEID '{' expr '}' ';'
+
+    TYPEID  偏移，并进入状态 46
+
+
+状态 42
+
+   16 formals: formals ',' formal .
+
+    $default  使用规则 16 以归约 (formals)
+
+
+状态 43
+
+   18 expr: INT_CONST .
+
+    $default  使用规则 18 以归约 (expr)
+
+
+状态 44
+
+   13 feature: OBJECTID ':' TYPEID ASSIGN expr . ';'
+
+    ';'  偏移，并进入状态 47
+
+
+状态 45
+
+   12 feature: OBJECTID '(' dummy_formal_list ')' ':' TYPEID . '{' expr '}' ';'
+
+    '{'  偏移，并进入状态 48
+
+
+状态 46
+
+   11 feature: OBJECTID '(' formals ')' ':' TYPEID . '{' expr '}' ';'
+
+    '{'  偏移，并进入状态 49
+
+
+状态 47
+
+   13 feature: OBJECTID ':' TYPEID ASSIGN expr ';' .
+
+    $default  使用规则 13 以归约 (feature)
+
+
+状态 48
+
+   12 feature: OBJECTID '(' dummy_formal_list ')' ':' TYPEID '{' . expr '}' ';'
+
+    INT_CONST  偏移，并进入状态 43
+
+    expr  转到状态 50
+
+
+状态 49
+
+   11 feature: OBJECTID '(' formals ')' ':' TYPEID '{' . expr '}' ';'
+
+    INT_CONST  偏移，并进入状态 43
+
+    expr  转到状态 51
+
+
+状态 50
+
+   12 feature: OBJECTID '(' dummy_formal_list ')' ':' TYPEID '{' expr . '}' ';'
+
+    '}'  偏移，并进入状态 52
+
+
+状态 51
+
+   11 feature: OBJECTID '(' formals ')' ':' TYPEID '{' expr . '}' ';'
+
+    '}'  偏移，并进入状态 53
+
+
+状态 52
+
+   12 feature: OBJECTID '(' dummy_formal_list ')' ':' TYPEID '{' expr '}' . ';'
+
+    ';'  偏移，并进入状态 54
+
+
+状态 53
+
+   11 feature: OBJECTID '(' formals ')' ':' TYPEID '{' expr '}' . ';'
+
+    ';'  偏移，并进入状态 55
+
+
+状态 54
+
+   12 feature: OBJECTID '(' dummy_formal_list ')' ':' TYPEID '{' expr '}' ';' .
+
+    $default  使用规则 12 以归约 (feature)
+
+
+状态 55
+
+   11 feature: OBJECTID '(' formals ')' ':' TYPEID '{' expr '}' ';' .
+
+    $default  使用规则 11 以归约 (feature)

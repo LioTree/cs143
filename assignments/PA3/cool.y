@@ -136,6 +136,12 @@
     
     /* You will want to change the following line. */
     %type <features> dummy_feature_list
+    %type <features> features
+    %type <feature> feature
+    %type <formals> dummy_formal_list
+    %type <formals> formals
+    %type <formal> formal 
+    %type <expression> expr
     
     /* Precedence declarations go here. */
     
@@ -162,13 +168,50 @@
     stringtable.add_string(curr_filename)); }
     | CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list '}' ';'
     { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+    | CLASS TYPEID '{' features '}' ';'
+    { $$ = class_($2,idtable.add_string("Object"),$4,
+    stringtable.add_string(curr_filename)); }
+    | CLASS TYPEID INHERITS TYPEID '{' features '}' ';'
+    { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
     ;
     
     /* Feature list may be empty, but no empty features in list. */
     dummy_feature_list:		/* empty */
     {  $$ = nil_Features(); }
-    
-    
+    ;
+
+    features : feature
+    { $$ = single_Features($1); }
+    | features feature
+    { $$ = append_Features($1,single_Features($2)); }
+    ;
+
+    feature : OBJECTID '(' formals ')' ':' TYPEID '{' expr '}' ';'
+    { $$ = method($1,$3,$6,$8); }
+    | OBJECTID '(' dummy_formal_list ')' ':' TYPEID '{' expr '}' ';'
+    { $$ = method($1,$3,$6,$8); }
+    | OBJECTID ':' TYPEID ASSIGN expr ';'
+    { $$ = attr($1,$3,$5); }
+    ;
+
+    dummy_formal_list:
+    { $$ = nil_Formals(); }
+    ;
+
+    formals : formal
+    { single_Formals($1); }
+    | formals ',' formal
+    { append_Formals($1,single_Formals($3)); }
+    ;
+
+    formal : OBJECTID ':' TYPEID
+    { $$ = formal($1,$3); }
+    ;
+
+    expr : INT_CONST // undone
+    { $$ = int_const($1); }
+    ;
+
     /* end of grammar */
     %%
     
