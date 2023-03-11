@@ -6,4 +6,12 @@ ana(): Int {
 bnb(): Int { 
     1.a()
  };
+
+cnc(): Int { 
+    a(1,2)
+ };
+
+dnd(): Int { 
+    a()
+ };
 };

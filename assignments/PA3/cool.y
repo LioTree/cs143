@@ -219,6 +219,12 @@
     expr '.' OBJECTID '(' dummy_actual_arg_list ')'
     { $$ = dispatch($1,$3,$5); }
     |
+    OBJECTID '(' actual_args ')'
+    { $$ = dispatch(object(idtable.add_string("self")),$1,$3); }
+    |
+    OBJECTID '(' dummy_actual_arg_list ')'
+    { $$ = dispatch(object(idtable.add_string("self")),$1,$3); }
+    |
     INT_CONST
     { $$ = int_const($1); }
     ;
