@@ -233,6 +233,12 @@
     |
     INT_CONST
     { $$ = int_const($1); }
+    |
+    STR_CONST
+    { $$ = string_const($1); }
+    |
+    BOOL_CONST
+    { $$ = bool_const($1); }
     ;
 
     actual_args : expr
