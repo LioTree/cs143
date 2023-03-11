@@ -330,8 +330,8 @@
     exprs_block: expr ';'
     { $$ = single_Expressions($1); }
     |
-    expr ';' exprs_block
-    { $$ = append_Expressions($3,single_Expressions($1)); }
+    exprs_block expr ';'
+    { $$ = append_Expressions($1,single_Expressions($2)); }
     ;
 
     /* end of grammar */
