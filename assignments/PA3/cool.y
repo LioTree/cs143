@@ -234,6 +234,9 @@
     expr '@' TYPEID '.' OBJECTID '(' dummy_actual_arg_list ')'
     { $$ = static_dispatch($1,$3,$5,$7); }
     |
+    IF expr THEN expr ELSE expr FI
+    { $$ = cond($2,$4,$6); }
+    |
     WHILE expr LOOP expr POOL
     { $$ = loop($2,$4); }
     |
