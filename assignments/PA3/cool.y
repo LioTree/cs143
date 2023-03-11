@@ -146,6 +146,7 @@
     %type <expressions> dummy_actual_arg_list
     %type <cases> cases
     %type <expression> let_expr
+    %type <expressions> exprs_block
     
     /* Precedence declarations go here. */
     
@@ -233,6 +234,12 @@
     expr '@' TYPEID '.' OBJECTID '(' dummy_actual_arg_list ')'
     { $$ = static_dispatch($1,$3,$5,$7); }
     |
+    WHILE expr LOOP expr POOL
+    { $$ = loop($2,$4); }
+    |
+    '{' exprs_block '}'
+    { $$ = block($2); }
+    |
     LET let_expr
     { $$ = $2; }
     |
@@ -315,6 +322,13 @@
     |
     OBJECTID ':' TYPEID ASSIGN expr ',' let_expr
     { $$ = let($1,$3,$5,$7); }
+    ;
+
+    exprs_block: expr ';'
+    { $$ = single_Expressions($1); }
+    |
+    expr ';' exprs_block
+    { $$ = append_Expressions($3,single_Expressions($1)); }
     ;
 
     /* end of grammar */
