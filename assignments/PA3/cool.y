@@ -231,6 +231,33 @@
     expr '@' TYPEID '.' OBJECTID '(' dummy_actual_arg_list ')'
     { $$ = static_dispatch($1,$3,$5,$7); }
     |
+    expr '+' expr
+    { $$ = plus($1,$3); }
+    |
+    expr '-' expr
+    { $$ = sub($1,$3); }
+    |
+    expr '*' expr
+    { $$ = mul($1,$3); }
+    |
+    expr '/' expr
+    { $$ = divide($1,$3); }
+    |
+    '~' expr
+    { $$ = neg($2); }
+    |
+    expr '<' expr
+    { $$ = lt($1,$3); }
+    |
+    expr LE expr
+    { $$ = leq($1,$3); }
+    |
+    expr '=' expr 
+    { $$ = eq($1,$3); }
+    |
+    NOT expr
+    { $$ = comp($2); }
+    |
     '(' expr ')'
     { $$ = $2; }
     |
