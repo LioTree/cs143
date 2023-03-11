@@ -225,6 +225,12 @@
     OBJECTID '(' dummy_actual_arg_list ')'
     { $$ = dispatch(object(idtable.add_string("self")),$1,$3); }
     |
+    expr '@' TYPEID '.' OBJECTID '(' actual_args ')'
+    { $$ = static_dispatch($1,$3,$5,$7); }
+    |
+    expr '@' TYPEID '.' OBJECTID '(' dummy_actual_arg_list ')'
+    { $$ = static_dispatch($1,$3,$5,$7); }
+    |
     INT_CONST
     { $$ = int_const($1); }
     ;
