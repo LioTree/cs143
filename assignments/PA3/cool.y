@@ -144,6 +144,7 @@
     %type <expression> expr
     %type <expressions> actual_args
     %type <expressions> dummy_actual_arg_list
+    %type <cases> cases
     
     /* Precedence declarations go here. */
     
@@ -231,6 +232,9 @@
     expr '@' TYPEID '.' OBJECTID '(' dummy_actual_arg_list ')'
     { $$ = static_dispatch($1,$3,$5,$7); }
     |
+    CASE expr OF cases ESAC ';'
+    { $$ = typcase($2,$4); }
+    |
     NEW TYPEID
     { $$ = new_($2); }
     |
@@ -288,6 +292,12 @@
 
     dummy_actual_arg_list : 
     { $$ = nil_Expressions(); }
+
+    cases : OBJECTID ':' TYPEID DARROW expr ';'
+    { $$ = single_Cases(branch($1,$3,$5)); }
+    | OBJECTID ':' TYPEID DARROW expr ';' cases
+    { $$ = append_Cases($7,single_Cases(branch($1,$3,$5))); }
+    ;
 
     /* end of grammar */
     %%
