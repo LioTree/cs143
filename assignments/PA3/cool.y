@@ -231,6 +231,9 @@
     expr '@' TYPEID '.' OBJECTID '(' dummy_actual_arg_list ')'
     { $$ = static_dispatch($1,$3,$5,$7); }
     |
+    OBJECTID
+    { $$ = object($1); }
+    |
     INT_CONST
     { $$ = int_const($1); }
     |
