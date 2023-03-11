@@ -145,6 +145,7 @@
     %type <expressions> actual_args
     %type <expressions> dummy_actual_arg_list
     %type <cases> cases
+    %type <expression> let_expr
     
     /* Precedence declarations go here. */
     
@@ -232,6 +233,9 @@
     expr '@' TYPEID '.' OBJECTID '(' dummy_actual_arg_list ')'
     { $$ = static_dispatch($1,$3,$5,$7); }
     |
+    LET let_expr
+    { $$ = $2; }
+    |
     CASE expr OF cases ESAC ';'
     { $$ = typcase($2,$4); }
     |
@@ -295,8 +299,22 @@
 
     cases : OBJECTID ':' TYPEID DARROW expr ';'
     { $$ = single_Cases(branch($1,$3,$5)); }
-    | OBJECTID ':' TYPEID DARROW expr ';' cases
+    | 
+    OBJECTID ':' TYPEID DARROW expr ';' cases
     { $$ = append_Cases($7,single_Cases(branch($1,$3,$5))); }
+    ;
+
+    let_expr: OBJECTID ':' TYPEID IN expr
+    { $$ = let($1,$3,no_expr(),$5); }
+    | 
+    OBJECTID ':' TYPEID ASSIGN expr IN expr
+    { $$ = let($1,$3,$5,$7); }
+    |
+    OBJECTID ':' TYPEID ',' let_expr
+    { $$ = let($1,$3,no_expr(),$5); }
+    |
+    OBJECTID ':' TYPEID ASSIGN expr ',' let_expr
+    { $$ = let($1,$3,$5,$7); }
     ;
 
     /* end of grammar */
