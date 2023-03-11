@@ -6,6 +6,6 @@ PA?/*.o
 PA?/*.d
 PA?/*.output
 PA3/cool-parse.cc
-PA3/cool-tab.c
+PA3/cool.tab.c
 PA?/pa?-grading.pl
 PA?/grading/*
