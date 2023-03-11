@@ -44,7 +44,7 @@ parser: ${OBJS}
 	${CC} ${CFLAGS} ${OBJS} ${LIB} -o parser
 
 graph: cool.y
-	bison ${BFLAGS} --graph cool.y
+	bison ${BFLAGS} --graph --report=all cool.y
 	dot cool.dot -T png -o cool.png
 	rm cool.dot
 	mv cool.png ~/D/source/
