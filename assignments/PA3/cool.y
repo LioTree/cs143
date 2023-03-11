@@ -231,6 +231,9 @@
     expr '@' TYPEID '.' OBJECTID '(' dummy_actual_arg_list ')'
     { $$ = static_dispatch($1,$3,$5,$7); }
     |
+    ISVOID expr
+    { $$ = isvoid($2); }
+    |
     expr '+' expr
     { $$ = plus($1,$3); }
     |
