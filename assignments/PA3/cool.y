@@ -143,6 +143,7 @@
     %type <formal> formal 
     %type <expression> expr
     %type <expressions> actual_args
+    %type <expressions> dummy_actual_arg_list
     
     /* Precedence declarations go here. */
     
@@ -215,6 +216,9 @@
     expr '.' OBJECTID '(' actual_args ')'
     { $$ = dispatch($1,$3,$5); }
     |
+    expr '.' OBJECTID '(' dummy_actual_arg_list ')'
+    { $$ = dispatch($1,$3,$5); }
+    |
     INT_CONST
     { $$ = int_const($1); }
     ;
@@ -224,6 +228,9 @@
     | expr ',' actual_args
     { $$ = append_Expressions($3,single_Expressions($1)); }
     ;
+
+    dummy_actual_arg_list : 
+    { $$ = nil_Expressions(); }
 
     /* end of grammar */
     %%
