@@ -149,6 +149,7 @@
     %type <expressions> exprs_block
     
     /* Precedence declarations go here. */
+   %nonassoc '=' LE '<'
    %left '+' '-' 
    %left '*' '/' 
     
