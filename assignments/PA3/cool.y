@@ -249,7 +249,7 @@
     LET let_expr
     { $$ = $2; }
     |
-    CASE expr OF cases ESAC ';'
+    CASE expr OF cases ESAC
     { $$ = typcase($2,$4); }
     |
     NEW TYPEID
@@ -313,8 +313,8 @@
     cases : OBJECTID ':' TYPEID DARROW expr ';'
     { $$ = single_Cases(branch($1,$3,$5)); }
     | 
-    OBJECTID ':' TYPEID DARROW expr ';' cases
-    { $$ = append_Cases($7,single_Cases(branch($1,$3,$5))); }
+    cases OBJECTID ':' TYPEID DARROW expr ';'
+    { $$ = append_Cases($1,single_Cases(branch($2,$4,$6))); }
     ;
 
     let_expr: OBJECTID ':' TYPEID IN expr
