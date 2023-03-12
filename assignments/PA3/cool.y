@@ -211,6 +211,24 @@
     { $$ = attr($1,$3,$5); }
     | OBJECTID ':' TYPEID ';'
     { $$ = attr($1,$3,no_expr()); }
+    | OBJECTID '(' formals ')' ':' TYPEID '{' error '}' ';'
+    {}
+    | OBJECTID '(' dummy_formal_list ')' ':' TYPEID '{' error '}' ';'
+    {}
+    | OBJECTID ':' TYPEID ASSIGN error ';'
+    {}
+    | error '(' formals ')' ':' TYPEID '{' expr '}' ';'
+    {}
+    | error '(' dummy_formal_list ')' ':' TYPEID '{' expr '}' ';'
+    {}
+    | error ':' TYPEID ASSIGN expr ';'
+    {}
+    | error ':' TYPEID ';'
+    {}
+    | OBJECTID ':' error ASSIGN expr ';'
+    {}
+    | OBJECTID ':' error ';'
+    {}
     ;
 
     dummy_formal_list:
@@ -346,6 +364,8 @@
     |
     exprs_block expr ';'
     { $$ = append_Expressions($1,single_Expressions($2)); }
+    |
+    exprs_block error ';'
     ;
 
     /* end of grammar */
