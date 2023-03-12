@@ -149,7 +149,8 @@
     %type <expressions> exprs_block
     
     /* Precedence declarations go here. */
-    
+   %left '+' '-' 
+   %left '*' '/' 
     
     %%
     /* 
