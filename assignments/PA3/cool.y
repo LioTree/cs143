@@ -303,8 +303,8 @@
 
     actual_args : expr
     { $$ = single_Expressions($1); }
-    | expr ',' actual_args
-    { $$ = append_Expressions($3,single_Expressions($1)); }
+    | actual_args ',' expr
+    { $$ = append_Expressions($1,single_Expressions($3)); }
     ;
 
     dummy_actual_arg_list : 
