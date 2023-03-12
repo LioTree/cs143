@@ -198,6 +198,8 @@
     { $$ = method($1,$3,$6,$8); }
     | OBJECTID ':' TYPEID ASSIGN expr ';'
     { $$ = attr($1,$3,$5); }
+    | OBJECTID ':' TYPEID ';'
+    { $$ = attr($1,$3,no_expr()); }
     ;
 
     dummy_formal_list:
