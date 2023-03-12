@@ -357,6 +357,18 @@
     |
     OBJECTID ':' TYPEID ASSIGN expr ',' let_expr
     { $$ = let($1,$3,$5,$7); }
+    | 
+    OBJECTID ':' error IN expr
+    {}
+    |
+    OBJECTID ':' error ASSIGN expr IN expr
+    {}
+    |
+    OBJECTID ':' error ',' let_expr
+    {}
+    |
+    OBJECTID ':' error ASSIGN expr ',' let_expr
+    {}
     ;
 
     exprs_block: expr ';'
