@@ -207,9 +207,9 @@
     ;
 
     formals : formal
-    { single_Formals($1); }
+    { $$=single_Formals($1); }
     | formals ',' formal
-    { append_Formals($1,single_Formals($3)); }
+    { $$=append_Formals($1,single_Formals($3)); }
     ;
 
     formal : OBJECTID ':' TYPEID
