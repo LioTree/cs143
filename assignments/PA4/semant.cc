@@ -84,12 +84,47 @@ static void initialize_constants(void)
 
 
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
-
     /* Fill this in */
-
+    classes = append_Classes(classes,install_basic_classes());
+    for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
+        Class_ c = classes->nth(i);
+        Symbol name = dynamic_cast<class__class *>(c)->get_name();
+        Symbol parent = dynamic_cast<class__class *>(c)->get_parent();
+        inheritance_graph[name][parent] = 1;
+    }
+    // for (auto it = inheritance_graph.begin(); it != inheritance_graph.end(); it++) {
+    //     cout << it->first->get_string() << ":   ";
+    //     for (auto it2 = it->second.begin(); it2 != it->second.end(); it2++) {
+    //         cout << it2->first->get_string() << " ";
+    //     }
+    //     cout << endl;
+    // }
 }
 
-void ClassTable::install_basic_classes() {
+void ClassTable::check_inheritance() {
+    for (auto it = inheritance_graph.begin(); it != inheritance_graph.end(); it++) {
+        Symbol curr_class = it->first;
+        std::map<Symbol, int> visited;
+        visited[curr_class] = 1;
+        dfs_inheritance(curr_class, visited);
+    }
+}
+
+void ClassTable::dfs_inheritance(Symbol current_class,std::map<Symbol, int> & visited) {
+    for (auto it = inheritance_graph[current_class].begin(); it != inheritance_graph[current_class].end(); it++) {
+        Symbol parent = it->first;
+        if (visited.find(parent) == visited.end()) {
+            visited[parent] = 1;
+            dfs_inheritance(parent,visited);
+        }
+        else {
+            cout << "error!" << endl;
+            exit(0);
+        }
+    }
+}
+
+Classes ClassTable::install_basic_classes() {
 
     // The tree package uses these globals to annotate the classes built below.
    // curr_lineno  = 0;
@@ -122,6 +157,7 @@ void ClassTable::install_basic_classes() {
 					       single_Features(method(type_name, nil_Formals(), Str, no_expr()))),
 			       single_Features(method(copy, nil_Formals(), SELF_TYPE, no_expr()))),
 	       filename);
+    Classes classes = single_Classes(Object_class);
 
     // 
     // The IO class inherits from Object. Its methods are
@@ -143,6 +179,7 @@ void ClassTable::install_basic_classes() {
 					       single_Features(method(in_string, nil_Formals(), Str, no_expr()))),
 			       single_Features(method(in_int, nil_Formals(), Int, no_expr()))),
 	       filename);  
+    classes = append_Classes(classes, single_Classes(IO_class));
 
     //
     // The Int class has no methods and only a single attribute, the
@@ -153,12 +190,14 @@ void ClassTable::install_basic_classes() {
 	       Object,
 	       single_Features(attr(val, prim_slot, no_expr())),
 	       filename);
+    classes = append_Classes(classes, single_Classes(Int_class));
 
     //
     // Bool also has only the "val" slot.
     //
     Class_ Bool_class =
 	class_(Bool, Object, single_Features(attr(val, prim_slot, no_expr())),filename);
+    classes = append_Classes(classes, single_Classes(Bool_class));
 
     //
     // The class Str has a number of slots and operations:
@@ -188,6 +227,8 @@ void ClassTable::install_basic_classes() {
 						      Str, 
 						      no_expr()))),
 	       filename);
+    classes = append_Classes(classes, single_Classes(Str_class));
+    return classes;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -245,6 +286,7 @@ void program_class::semant()
     ClassTable *classtable = new ClassTable(classes);
 
     /* some semantic analysis code may go here */
+    classtable->check_inheritance();
 
     if (classtable->errors()) {
 	cerr << "Compilation halted due to static semantic errors." << endl;

@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <iostream>  
+#include <map>
 #include "cool-tree.h"
 #include "stringtab.h"
 #include "symtab.h"
@@ -22,11 +23,14 @@ typedef ClassTable *ClassTableP;
 class ClassTable {
 private:
   int semant_errors;
-  void install_basic_classes();
+  Classes install_basic_classes();
   ostream& error_stream;
+  std::map<Symbol,std::map<Symbol,int>> inheritance_graph;
 
 public:
   ClassTable(Classes);
+  void check_inheritance();
+  void dfs_inheritance(Symbol current_class,std::map<Symbol, int> & visited);
   int errors() { return semant_errors; }
   ostream& semant_error();
   ostream& semant_error(Class_ c);
