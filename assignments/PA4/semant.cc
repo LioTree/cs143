@@ -85,20 +85,14 @@ static void initialize_constants(void)
 
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
     /* Fill this in */
-    classes = append_Classes(classes,install_basic_classes());
-    for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
-        Class_ c = classes->nth(i);
+    install_basic_classes();
+    this->classes = append_Classes(classes,this->classes);
+    for (int i = this->classes->first(); this->classes->more(i); i = this->classes->next(i)) {
+        Class_ c = this->classes->nth(i);
         Symbol name = dynamic_cast<class__class *>(c)->get_name();
         Symbol parent = dynamic_cast<class__class *>(c)->get_parent();
         inheritance_graph[name][parent] = 1;
     }
-    // for (auto it = inheritance_graph.begin(); it != inheritance_graph.end(); it++) {
-    //     cout << it->first->get_string() << ":   ";
-    //     for (auto it2 = it->second.begin(); it2 != it->second.end(); it2++) {
-    //         cout << it2->first->get_string() << " ";
-    //     }
-    //     cout << endl;
-    // }
 }
 
 void ClassTable::check_inheritance() {
@@ -124,7 +118,7 @@ void ClassTable::dfs_inheritance(Symbol current_class,std::map<Symbol, int> & vi
     }
 }
 
-Classes ClassTable::install_basic_classes() {
+void ClassTable::install_basic_classes() {
 
     // The tree package uses these globals to annotate the classes built below.
    // curr_lineno  = 0;
@@ -157,7 +151,7 @@ Classes ClassTable::install_basic_classes() {
 					       single_Features(method(type_name, nil_Formals(), Str, no_expr()))),
 			       single_Features(method(copy, nil_Formals(), SELF_TYPE, no_expr()))),
 	       filename);
-    Classes classes = single_Classes(Object_class);
+    classes = single_Classes(Object_class);
 
     // 
     // The IO class inherits from Object. Its methods are
@@ -228,7 +222,6 @@ Classes ClassTable::install_basic_classes() {
 						      no_expr()))),
 	       filename);
     classes = append_Classes(classes, single_Classes(Str_class));
-    return classes;
 }
 
 ////////////////////////////////////////////////////////////////////
