@@ -53,7 +53,8 @@ do
    echo "linking $f"
    xname=${COOL_INST}/bin/.${arch}/$f
    if [ -f $xname ]; then
-      ln -s $xname $f
+      # ln -s $xname $f
+      cp $xname $f
    else
       echo $f is not compiled for $arch
    fi
