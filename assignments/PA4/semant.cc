@@ -95,7 +95,7 @@ ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(c
         Symbol name = it->first;
         Symbol parent = dynamic_cast<class__class *>(it->second)->get_parent();
         if(parent != No_class && classes.find(parent) == classes.end()) {
-            cout << "parent class not found" << endl;
+            semant_error(it->second) << "parent class not found" << endl;
             exit(0);
         }
         inheritance_graph[name].push_back(parent);
@@ -119,7 +119,7 @@ void ClassTable::dfs_inheritance(Symbol current_class,std::map<Symbol, int> & vi
             dfs_inheritance(parent,visited);
         }
         else {
-            cout << "cycle inheritance error!" << endl;
+            semant_error(classes[current_class]) << "has cycle inheritance error!" << endl;
             exit(0);
         }
     }
