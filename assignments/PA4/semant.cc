@@ -87,8 +87,35 @@ ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(c
     /* Fill this in */
     install_basic_classes();
     for (int i = user_classes->first(); user_classes->more(i); i = user_classes->next(i)) {
-        Class_ c = user_classes->nth(i);
-        classes[dynamic_cast<class__class *>(c)->get_name()] = c;
+        class__class *c = dynamic_cast<class__class *>(user_classes->nth(i));
+        Symbol class_name = c->get_name();
+        if(classes.find(c->get_name()) != classes.end()) {
+            semant_error(user_classes->nth(i)) << "class multi define" << endl;
+            exit(0);
+        }
+        classes[c->get_name()] = c;
+        Features features = c->get_features();
+        for (int j = features->first(); features->more(j); j = features->next(j)) {
+            Feature feature = features->nth(j);
+            if (dynamic_cast<method_class *>(feature)) {
+                method_class *method = dynamic_cast<method_class *>(feature);
+                Symbol method_name = method->get_name();
+                if(class_methods[class_name].find(method_name) == class_methods[class_name].end()) {
+                   semant_error(user_classes->nth(i)) << "method multi define" << endl;
+                   exit(0);
+                }
+                class_methods[class_name][method_name] = 1;
+            }
+            else {
+                attr_class *attr = dynamic_cast<attr_class *>(feature);
+                Symbol attr_name = attr->get_name();
+                if(class_attrs[class_name].find(attr_name) == class_attrs[class_name].end()) {
+                   semant_error(user_classes->nth(i)) << "attribute multi define" << endl;
+                   exit(0);
+                }
+                class_attrs[class_name][attr_name] = 1;
+            }
+        }
     }
 
     for (auto it = classes.begin(); it != classes.end(); it++) {
@@ -264,7 +291,6 @@ ostream& ClassTable::semant_error()
 } 
 
 
-
 /*   This is the entry point to the semantic checker.
 
      Your checker should do the following two things:
@@ -287,6 +313,7 @@ void program_class::semant()
 
     /* some semantic analysis code may go here */
     classtable->check_inheritance();
+    
 
     if (classtable->errors()) {
 	cerr << "Compilation halted due to static semantic errors." << endl;

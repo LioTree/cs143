@@ -28,6 +28,8 @@ private:
   ostream& error_stream;
   std::map<Symbol,Class_> classes;
   std::map<Symbol,std::vector<Symbol>> inheritance_graph;
+  std::map<Symbol,std::map<Symbol,int>> class_methods;
+  std::map<Symbol,std::map<Symbol,int>> class_attrs;
 
 public:
   ClassTable(Classes);
