@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <iostream>  
 #include <map>
+#include <vector>
 #include "cool-tree.h"
 #include "stringtab.h"
 #include "symtab.h"
@@ -25,8 +26,8 @@ private:
   int semant_errors;
   void install_basic_classes();
   ostream& error_stream;
-  Classes classes;
-  std::map<Symbol,std::map<Symbol,int>> inheritance_graph;
+  std::map<Symbol,Class_> classes;
+  std::map<Symbol,std::vector<Symbol>> inheritance_graph;
 
 public:
   ClassTable(Classes);

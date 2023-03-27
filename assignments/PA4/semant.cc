@@ -83,15 +83,22 @@ static void initialize_constants(void)
 
 
 
-ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
+ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(cerr) {
     /* Fill this in */
     install_basic_classes();
-    this->classes = append_Classes(classes,this->classes);
-    for (int i = this->classes->first(); this->classes->more(i); i = this->classes->next(i)) {
-        Class_ c = this->classes->nth(i);
-        Symbol name = dynamic_cast<class__class *>(c)->get_name();
-        Symbol parent = dynamic_cast<class__class *>(c)->get_parent();
-        inheritance_graph[name][parent] = 1;
+    for (int i = user_classes->first(); user_classes->more(i); i = user_classes->next(i)) {
+        Class_ c = user_classes->nth(i);
+        classes[dynamic_cast<class__class *>(c)->get_name()] = c;
+    }
+
+    for (auto it = classes.begin(); it != classes.end(); it++) {
+        Symbol name = it->first;
+        Symbol parent = dynamic_cast<class__class *>(it->second)->get_parent();
+        if(parent != No_class && classes.find(parent) == classes.end()) {
+            cout << "parent class not found" << endl;
+            exit(0);
+        }
+        inheritance_graph[name].push_back(parent);
     }
 }
 
@@ -106,13 +113,13 @@ void ClassTable::check_inheritance() {
 
 void ClassTable::dfs_inheritance(Symbol current_class,std::map<Symbol, int> & visited) {
     for (auto it = inheritance_graph[current_class].begin(); it != inheritance_graph[current_class].end(); it++) {
-        Symbol parent = it->first;
+        Symbol parent = *it;
         if (visited.find(parent) == visited.end()) {
             visited[parent] = 1;
             dfs_inheritance(parent,visited);
         }
         else {
-            cout << "error!" << endl;
+            cout << "cycle inheritance error!" << endl;
             exit(0);
         }
     }
@@ -151,7 +158,7 @@ void ClassTable::install_basic_classes() {
 					       single_Features(method(type_name, nil_Formals(), Str, no_expr()))),
 			       single_Features(method(copy, nil_Formals(), SELF_TYPE, no_expr()))),
 	       filename);
-    classes = single_Classes(Object_class);
+    classes[dynamic_cast<class__class *>(Object_class)->get_name()] = Object_class;
 
     // 
     // The IO class inherits from Object. Its methods are
@@ -173,7 +180,7 @@ void ClassTable::install_basic_classes() {
 					       single_Features(method(in_string, nil_Formals(), Str, no_expr()))),
 			       single_Features(method(in_int, nil_Formals(), Int, no_expr()))),
 	       filename);  
-    classes = append_Classes(classes, single_Classes(IO_class));
+    classes[dynamic_cast<class__class *>(IO_class)->get_name()] = IO_class;
 
     //
     // The Int class has no methods and only a single attribute, the
@@ -184,14 +191,14 @@ void ClassTable::install_basic_classes() {
 	       Object,
 	       single_Features(attr(val, prim_slot, no_expr())),
 	       filename);
-    classes = append_Classes(classes, single_Classes(Int_class));
+    classes[dynamic_cast<class__class *>(Int_class)->get_name()] = Int_class;
 
     //
     // Bool also has only the "val" slot.
     //
     Class_ Bool_class =
 	class_(Bool, Object, single_Features(attr(val, prim_slot, no_expr())),filename);
-    classes = append_Classes(classes, single_Classes(Bool_class));
+    classes[dynamic_cast<class__class *>(Bool_class)->get_name()] = Bool_class;
 
     //
     // The class Str has a number of slots and operations:
@@ -221,7 +228,7 @@ void ClassTable::install_basic_classes() {
 						      Str, 
 						      no_expr()))),
 	       filename);
-    classes = append_Classes(classes, single_Classes(Str_class));
+    classes[dynamic_cast<class__class *>(Str_class)->get_name()] = Str_class;
 }
 
 ////////////////////////////////////////////////////////////////////
