@@ -81,7 +81,7 @@ static void initialize_constants(void)
     val         = idtable.add_string("_val");
 }
 
-
+static SymbolTable<Symbol,int> *symbol_table;
 
 ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(cerr) {
     /* Fill this in */
@@ -91,7 +91,7 @@ ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(c
         Symbol class_name = c->get_name();
         if(classes.find(c->get_name()) != classes.end()) {
             semant_error(user_classes->nth(i)) << "class multi define" << endl;
-            exit(0);
+            // exit(0);
         }
         classes[c->get_name()] = c;
         Features features = c->get_features();
@@ -100,18 +100,18 @@ ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(c
             if (dynamic_cast<method_class *>(feature)) {
                 method_class *method = dynamic_cast<method_class *>(feature);
                 Symbol method_name = method->get_name();
-                if(class_methods[class_name].find(method_name) == class_methods[class_name].end()) {
+                if(class_methods[class_name].find(method_name) != class_methods[class_name].end()) {
                    semant_error(user_classes->nth(i)) << "method multi define" << endl;
-                   exit(0);
+                //    exit(0);
                 }
                 class_methods[class_name][method_name] = 1;
             }
             else {
                 attr_class *attr = dynamic_cast<attr_class *>(feature);
                 Symbol attr_name = attr->get_name();
-                if(class_attrs[class_name].find(attr_name) == class_attrs[class_name].end()) {
+                if(class_attrs[class_name].find(attr_name) != class_attrs[class_name].end()) {
                    semant_error(user_classes->nth(i)) << "attribute multi define" << endl;
-                   exit(0);
+                //    exit(0);
                 }
                 class_attrs[class_name][attr_name] = 1;
             }
@@ -290,6 +290,26 @@ ostream& ClassTable::semant_error()
     return error_stream;
 } 
 
+void class__class::checkClassType(ClassTable *classtable) {
+    Features features = get_features();
+    for (int i = features->first(); features->more(i); i = features->next(i)) {
+        Feature feature = features->nth(i);
+        if (dynamic_cast<method_class *>(feature)) {
+            method_class *method = dynamic_cast<method_class *>(feature);
+            method->checkFeatureType(classtable);
+        }
+        else {
+            attr_class *attr = dynamic_cast<attr_class *>(feature);
+            attr->checkFeatureType(classtable);
+        }
+    }
+}
+
+void method_class::checkFeatureType(ClassTable *classtable) {
+}
+
+void attr_class::checkFeatureType(ClassTable *classtable) {
+}
 
 /*   This is the entry point to the semantic checker.
 
@@ -312,8 +332,11 @@ void program_class::semant()
     ClassTable *classtable = new ClassTable(classes);
 
     /* some semantic analysis code may go here */
-    classtable->check_inheritance();
-    
+    classtable->check_inheritance(); 
+    for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
+        class__class *c = dynamic_cast<class__class *>(classes->nth(i));
+        c->checkClassType(classtable);
+    }
 
     if (classtable->errors()) {
 	cerr << "Compilation halted due to static semantic errors." << endl;
