@@ -81,7 +81,7 @@ static void initialize_constants(void)
     val         = idtable.add_string("_val");
 }
 
-static SymbolTable<Symbol,int> *symbol_table;
+static SymbolTable<Symbol,Entry> *symbol_table;
 
 ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(cerr) {
     /* Fill this in */
@@ -150,6 +150,15 @@ void ClassTable::dfs_inheritance(Symbol current_class,std::map<Symbol, int> & vi
             exit(0);
         }
     }
+}
+
+bool ClassTable::lookup_inheritance(Symbol child,Symbol parent) {
+    for(auto it = inheritance_graph[child].begin(); it != inheritance_graph[child].end(); it++) {
+        if(*it == parent || lookup_inheritance(*it,parent)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void ClassTable::install_basic_classes() {
@@ -291,24 +300,38 @@ ostream& ClassTable::semant_error()
 } 
 
 void class__class::checkClassType(ClassTable *classtable) {
+    symbol_table->enterscope();
     Features features = get_features();
+    // check type of attributes first
     for (int i = features->first(); features->more(i); i = features->next(i)) {
         Feature feature = features->nth(i);
-        if (dynamic_cast<method_class *>(feature)) {
-            method_class *method = dynamic_cast<method_class *>(feature);
-            method->checkFeatureType(classtable);
-        }
-        else {
+        if (dynamic_cast<attr_class *>(feature)) {
             attr_class *attr = dynamic_cast<attr_class *>(feature);
             attr->checkFeatureType(classtable);
         }
     }
+    //check type of methods
+    for (int i = features->first(); features->more(i); i = features->next(i)) {
+        Feature feature = features->nth(i);
+        if (dynamic_cast<method_class *>(feature)) {
+            method_class *method= dynamic_cast<method_class *>(feature);
+            method->checkFeatureType(classtable);
+        }
+    }
+    symbol_table->exitscope();
 }
 
 void method_class::checkFeatureType(ClassTable *classtable) {
 }
 
 void attr_class::checkFeatureType(ClassTable *classtable) {
+    // Symbol init_type = init->checkExprType(classtable);
+    // temp
+    Symbol init_type = Object;
+    if(!classtable->lookup_inheritance(init_type,type_decl)) {
+        cout << "attribute init type error" << endl;
+    }
+    symbol_table->addid(name,type_decl);
 }
 
 /*   This is the entry point to the semantic checker.
@@ -333,6 +356,7 @@ void program_class::semant()
 
     /* some semantic analysis code may go here */
     classtable->check_inheritance(); 
+    symbol_table = new SymbolTable<Symbol, Entry>();
     for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
         class__class *c = dynamic_cast<class__class *>(classes->nth(i));
         c->checkClassType(classtable);

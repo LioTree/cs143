@@ -35,6 +35,7 @@ public:
   ClassTable(Classes);
   void check_inheritance();
   void dfs_inheritance(Symbol current_class,std::map<Symbol, int> & visited);
+  bool lookup_inheritance(Symbol child,Symbol parent);
   int errors() { return semant_errors; }
   ostream& semant_error();
   ostream& semant_error(Class_ c);
