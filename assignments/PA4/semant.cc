@@ -82,6 +82,7 @@ static void initialize_constants(void)
 }
 
 static SymbolTable<Symbol,Entry> *symbol_table;
+static ClassTable *classtable;
 
 ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(cerr) {
     /* Fill this in */
@@ -153,12 +154,18 @@ void ClassTable::dfs_inheritance(Symbol current_class,std::map<Symbol, int> & vi
 }
 
 bool ClassTable::lookup_inheritance(Symbol child,Symbol parent) {
+    if(child == parent)
+        return true;
     for(auto it = inheritance_graph[child].begin(); it != inheritance_graph[child].end(); it++) {
         if(*it == parent || lookup_inheritance(*it,parent)) {
             return true;
         }
     }
     return false;
+}
+
+bool ClassTable::lookup_class(Symbol name) {
+    return classes.find(name) != classes.end();
 }
 
 void ClassTable::install_basic_classes() {
@@ -299,15 +306,16 @@ ostream& ClassTable::semant_error()
     return error_stream;
 } 
 
-void class__class::checkClassType(ClassTable *classtable) {
+void class__class::checkClassType() {
     symbol_table->enterscope();
+    symbol_table->addid(self,name);
     Features features = get_features();
     // check type of attributes first
     for (int i = features->first(); features->more(i); i = features->next(i)) {
         Feature feature = features->nth(i);
         if (dynamic_cast<attr_class *>(feature)) {
             attr_class *attr = dynamic_cast<attr_class *>(feature);
-            attr->checkFeatureType(classtable);
+            attr->checkFeatureType();
         }
     }
     //check type of methods
@@ -315,23 +323,155 @@ void class__class::checkClassType(ClassTable *classtable) {
         Feature feature = features->nth(i);
         if (dynamic_cast<method_class *>(feature)) {
             method_class *method= dynamic_cast<method_class *>(feature);
-            method->checkFeatureType(classtable);
+            method->checkFeatureType();
         }
     }
     symbol_table->exitscope();
 }
 
-void method_class::checkFeatureType(ClassTable *classtable) {
+void method_class::checkFeatureType() {
+    symbol_table->enterscope();
+    for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
+        formal_class *formal = dynamic_cast<formal_class *>(formals->nth(i));
+        Symbol formal_type = formal->get_type_decl();
+        Symbol formal_name = formal->get_name();
+        symbol_table->addid(formal_name,formal_type);
+    }
+
+    Symbol expr_type = expr->checkExprType();
+    symbol_table->exitscope();
+    if(expr_type != return_type) {
+        cout << "return type error" << endl;
+    }
 }
 
-void attr_class::checkFeatureType(ClassTable *classtable) {
-    // Symbol init_type = init->checkExprType(classtable);
-    // temp
-    Symbol init_type = Object;
-    if(!classtable->lookup_inheritance(init_type,type_decl)) {
-        cout << "attribute init type error" << endl;
+void attr_class::checkFeatureType() {
+    if(dynamic_cast<no_expr_class *>(init) == NULL) {
+        Symbol init_type = init->checkExprType();
+        if(!classtable->lookup_inheritance(init_type,type_decl)) {
+            cout << "attribute init type error" << endl;
+        }
     }
     symbol_table->addid(name,type_decl);
+}
+
+Symbol int_const_class::checkExprType() {
+    return Int; 
+}
+
+Symbol plus_class::checkExprType() {
+    Symbol e1_type = e1->checkExprType();
+    Symbol e2_type = e2->checkExprType();
+    if(e1_type != Int || e2_type != Int) {
+        cout << "plus error" << endl;
+    }
+    return Int;
+}
+
+Symbol bool_const_class::checkExprType() {
+    return Bool;
+}
+
+Symbol string_const_class::checkExprType() {
+    return in_string;
+}
+
+Symbol new__class::checkExprType() {
+    // ignore SELF_TYPE first
+    if(!classtable->lookup_class(type_name)) {
+        cout << "new error" << endl;
+    }
+    return type_name;
+}
+
+Symbol comp_class::checkExprType() {
+    Symbol e1_type = e1->checkExprType();
+    if(e1_type != Bool) {
+        cout << "comp error" << endl;
+    }
+    return Bool;
+}
+
+Symbol loop_class::checkExprType() {
+    Symbol pred_type = pred->checkExprType(); 
+    if(pred_type != Bool) {
+        cout << "loop error" << endl;
+    }
+    return Object;
+}
+
+Symbol object_class::checkExprType() {
+    Symbol name_type = symbol_table->lookup(name);
+    if(name_type == NULL) {
+        cout << "unknown variable" << endl;
+        name_type = Object;
+    }
+    return name_type;
+}
+
+Symbol no_expr_class::checkExprType() {
+    return No_type;
+}
+
+// TO DO:
+Symbol assign_class::checkExprType() {
+    return Object;
+}
+
+Symbol static_dispatch_class::checkExprType() {
+    return Object;
+}
+
+Symbol dispatch_class::checkExprType() {
+    return Object;
+}
+
+Symbol cond_class::checkExprType() {
+    return Object;
+}
+
+Symbol typcase_class::checkExprType() {
+    return Object;
+}
+
+Symbol block_class::checkExprType() {
+    return Object;
+}
+
+Symbol let_class::checkExprType() {
+    return Object;
+}
+
+Symbol sub_class::checkExprType() {
+    return Object;
+}
+
+Symbol mul_class::checkExprType() {
+    return Object;
+}
+
+Symbol divide_class::checkExprType() {
+    return Object;
+}
+
+Symbol neg_class::checkExprType() {
+    return Object;
+}
+
+Symbol lt_class::checkExprType() {
+    return Object;
+}
+
+Symbol eq_class::checkExprType() {
+    return Object;
+}
+
+Symbol leq_class::checkExprType() {
+    return Object;
+}
+
+Symbol isvoid_class::checkExprType() {
+    return Object;
 }
 
 /*   This is the entry point to the semantic checker.
@@ -352,14 +492,14 @@ void program_class::semant()
     initialize_constants();
 
     /* ClassTable constructor may do some semantic analysis */
-    ClassTable *classtable = new ClassTable(classes);
+    classtable = new ClassTable(classes);
 
     /* some semantic analysis code may go here */
     classtable->check_inheritance(); 
     symbol_table = new SymbolTable<Symbol, Entry>();
     for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
         class__class *c = dynamic_cast<class__class *>(classes->nth(i));
-        c->checkClassType(classtable);
+        c->checkClassType();
     }
 
     if (classtable->errors()) {

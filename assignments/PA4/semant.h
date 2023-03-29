@@ -36,6 +36,7 @@ public:
   void check_inheritance();
   void dfs_inheritance(Symbol current_class,std::map<Symbol, int> & visited);
   bool lookup_inheritance(Symbol child,Symbol parent);
+  bool lookup_class(Symbol name);
   int errors() { return semant_errors; }
   ostream& semant_error();
   ostream& semant_error(Class_ c);
