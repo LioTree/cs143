@@ -33,6 +33,7 @@ private:
 
 public:
   ClassTable(Classes);
+  void init_methods_attrs(class__class *c);
   void check_inheritance();
   void dfs_inheritance(Symbol current_class,std::map<Symbol, int> & visited);
   bool lookup_inheritance(Symbol child,Symbol parent);

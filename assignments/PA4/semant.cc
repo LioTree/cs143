@@ -89,34 +89,12 @@ ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(c
     install_basic_classes();
     for (int i = user_classes->first(); user_classes->more(i); i = user_classes->next(i)) {
         class__class *c = dynamic_cast<class__class *>(user_classes->nth(i));
-        Symbol class_name = c->get_name();
         if(classes.find(c->get_name()) != classes.end()) {
             semant_error(user_classes->nth(i)) << "class multi define" << endl;
             // exit(0);
         }
-        classes[c->get_name()] = c;
-        Features features = c->get_features();
-        for (int j = features->first(); features->more(j); j = features->next(j)) {
-            Feature feature = features->nth(j);
-            if (dynamic_cast<method_class *>(feature)) {
-                method_class *method = dynamic_cast<method_class *>(feature);
-                Symbol method_name = method->get_name();
-                if(class_methods[class_name].find(method_name) != class_methods[class_name].end()) {
-                   semant_error(user_classes->nth(i)) << "method multi define" << endl;
-                //    exit(0);
-                }
-                class_methods[class_name][method_name] = method;
-            }
-            else {
-                attr_class *attr = dynamic_cast<attr_class *>(feature);
-                Symbol attr_name = attr->get_name();
-                if(class_attrs[class_name].find(attr_name) != class_attrs[class_name].end()) {
-                   semant_error(user_classes->nth(i)) << "attribute multi define" << endl;
-                //    exit(0);
-                }
-                class_attrs[class_name][attr_name] = attr;
-            }
-        }
+        classes[c->get_name()] = c; 
+        init_methods_attrs(c);
     }
 
     for (auto it = classes.begin(); it != classes.end(); it++) {
@@ -127,6 +105,32 @@ ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(c
             exit(0);
         }
         inheritance_graph[name].push_back(parent);
+    }
+}
+
+void ClassTable::init_methods_attrs(class__class *c) {
+    Symbol class_name = c->get_name();
+    Features features = c->get_features();
+    for (int j = features->first(); features->more(j); j = features->next(j)) {
+        Feature feature = features->nth(j);
+        if (dynamic_cast<method_class *>(feature)) {
+            method_class *method = dynamic_cast<method_class *>(feature);
+            Symbol method_name = method->get_name();
+            if(class_methods[class_name].find(method_name) != class_methods[class_name].end()) {
+                semant_error(c) << "method multi define" << endl;
+            //    exit(0);
+            }
+            class_methods[class_name][method_name] = method;
+        }
+        else {
+            attr_class *attr = dynamic_cast<attr_class *>(feature);
+            Symbol attr_name = attr->get_name();
+            if(class_attrs[class_name].find(attr_name) != class_attrs[class_name].end()) {
+                semant_error(c) << "attribute multi define" << endl;
+            //    exit(0);
+            }
+            class_attrs[class_name][attr_name] = attr;
+        }
     }
 }
 
@@ -233,6 +237,7 @@ void ClassTable::install_basic_classes() {
 			       single_Features(method(copy, nil_Formals(), SELF_TYPE, no_expr()))),
 	       filename);
     classes[dynamic_cast<class__class *>(Object_class)->get_name()] = Object_class;
+    init_methods_attrs(dynamic_cast<class__class *>(Object_class));
 
     // 
     // The IO class inherits from Object. Its methods are
@@ -255,6 +260,7 @@ void ClassTable::install_basic_classes() {
 			       single_Features(method(in_int, nil_Formals(), Int, no_expr()))),
 	       filename);  
     classes[dynamic_cast<class__class *>(IO_class)->get_name()] = IO_class;
+    init_methods_attrs(dynamic_cast<class__class *>(IO_class));
 
     //
     // The Int class has no methods and only a single attribute, the
@@ -266,6 +272,7 @@ void ClassTable::install_basic_classes() {
 	       single_Features(attr(val, prim_slot, no_expr())),
 	       filename);
     classes[dynamic_cast<class__class *>(Int_class)->get_name()] = Int_class;
+    init_methods_attrs(dynamic_cast<class__class *>(Int_class));
 
     //
     // Bool also has only the "val" slot.
@@ -273,6 +280,7 @@ void ClassTable::install_basic_classes() {
     Class_ Bool_class =
 	class_(Bool, Object, single_Features(attr(val, prim_slot, no_expr())),filename);
     classes[dynamic_cast<class__class *>(Bool_class)->get_name()] = Bool_class;
+    init_methods_attrs(dynamic_cast<class__class *>(Bool_class));
 
     //
     // The class Str has a number of slots and operations:
@@ -303,6 +311,7 @@ void ClassTable::install_basic_classes() {
 						      no_expr()))),
 	       filename);
     classes[dynamic_cast<class__class *>(Str_class)->get_name()] = Str_class;
+    init_methods_attrs(dynamic_cast<class__class *>(Str_class));
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -371,7 +380,7 @@ void method_class::checkFeatureType() {
 
     Symbol expr_type = expr->checkExprType();
     symbol_table->exitscope();
-    if(expr_type != return_type) {
+    if(!classtable->lookup_inheritance(expr_type,return_type)) {
         cout << "return type error" << endl;
     }
 }
@@ -431,7 +440,7 @@ Symbol bool_const_class::checkExprType() {
 }
 
 Symbol string_const_class::checkExprType() {
-    return in_string;
+    return Str;
 }
 
 Symbol new__class::checkExprType() {
