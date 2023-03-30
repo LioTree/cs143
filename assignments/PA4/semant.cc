@@ -105,7 +105,7 @@ ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(c
                    semant_error(user_classes->nth(i)) << "method multi define" << endl;
                 //    exit(0);
                 }
-                class_methods[class_name][method_name] = 1;
+                class_methods[class_name][method_name] = method;
             }
             else {
                 attr_class *attr = dynamic_cast<attr_class *>(feature);
@@ -114,7 +114,7 @@ ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(c
                    semant_error(user_classes->nth(i)) << "attribute multi define" << endl;
                 //    exit(0);
                 }
-                class_attrs[class_name][attr_name] = 1;
+                class_attrs[class_name][attr_name] = attr;
             }
         }
     }
@@ -164,9 +164,40 @@ bool ClassTable::lookup_inheritance(Symbol child,Symbol parent) {
     return false;
 }
 
-bool ClassTable::lookup_class(Symbol name) {
-    return classes.find(name) != classes.end();
+Symbol ClassTable::lub(Symbol class1, Symbol class2) {
+    if(class1 == class2) {
+        return class1;
+    }
+    std::map<Symbol, int> visited;
+    visited[class1] = 1;
+    while(class1 != No_class) {
+        class1 = dynamic_cast<class__class *>(lookup_class(class1))->get_parent();
+        visited[class1] = 1;
+    }
+    while(class2 != No_class) {
+        if(visited.find(class2) != visited.end()) {
+            return class2;
+        }
+        class2 = dynamic_cast<class__class *>(lookup_class(class2))->get_parent();
+    }
+    return Object;
 }
+
+
+Class_ ClassTable::lookup_class(Symbol name) {
+    return classes.find(name) != classes.end()?classes[name]:NULL;
+}
+
+method_class *ClassTable::lookup_method(Symbol class_name,Symbol method_name) {
+    while(class_name != No_class) {
+        if(class_methods[class_name].find(method_name) != class_methods[class_name].end()) {
+            return class_methods[class_name][method_name];
+        }
+        class_name = dynamic_cast<class__class *>(classtable->lookup_class(class_name))->get_parent();
+    }
+    return NULL;
+}
+
 
 void ClassTable::install_basic_classes() {
 
@@ -368,6 +399,33 @@ Symbol plus_class::checkExprType() {
     return Int;
 }
 
+Symbol sub_class::checkExprType() {
+    Symbol e1_type = e1->checkExprType();
+    Symbol e2_type = e2->checkExprType();
+    if(e1_type != Int || e2_type != Int) {
+        cout << "sub error" << endl;
+    }
+    return Int;
+}
+
+Symbol mul_class::checkExprType() {
+    Symbol e1_type = e1->checkExprType();
+    Symbol e2_type = e2->checkExprType();
+    if(e1_type != Int || e2_type != Int) {
+        cout << "mul error" << endl;
+    }
+    return Int;
+}
+
+Symbol divide_class::checkExprType() {
+    Symbol e1_type = e1->checkExprType();
+    Symbol e2_type = e2->checkExprType();
+    if(e1_type != Int || e2_type != Int) {
+        cout << "divide error" << endl;
+    }
+    return Int;
+}
+
 Symbol bool_const_class::checkExprType() {
     return Bool;
 }
@@ -378,7 +436,7 @@ Symbol string_const_class::checkExprType() {
 
 Symbol new__class::checkExprType() {
     // ignore SELF_TYPE first
-    if(!classtable->lookup_class(type_name)) {
+    if(classtable->lookup_class(type_name) == NULL) {
         cout << "new error" << endl;
     }
     return type_name;
@@ -413,66 +471,149 @@ Symbol no_expr_class::checkExprType() {
     return No_type;
 }
 
-// TO DO:
 Symbol assign_class::checkExprType() {
-    return Object;
-}
-
-Symbol static_dispatch_class::checkExprType() {
-    return Object;
-}
-
-Symbol dispatch_class::checkExprType() {
-    return Object;
+    Symbol expr_type = expr->checkExprType();
+    Symbol var_type = symbol_table->lookup(name);
+    if(var_type == NULL) {
+        cout << "unknown variable" << endl;
+        var_type = Object;
+    }
+    if(!classtable->lookup_inheritance(expr_type,var_type)) {
+        cout << "assign error" << endl;
+    }
+    return expr_type;
 }
 
 Symbol cond_class::checkExprType() {
-    return Object;
-}
-
-Symbol typcase_class::checkExprType() {
-    return Object;
+    Symbol pred_type = pred->checkExprType();
+    Symbol then_type = then_exp->checkExprType();
+    Symbol else_type = else_exp->checkExprType();
+    if(pred_type != Bool) {
+        cout << "cond error" << endl;
+    }
+    return classtable->lub(then_type,else_type);
 }
 
 Symbol block_class::checkExprType() {
-    return Object;
+    //foreach body
+    Symbol expr_type;
+    for (int i = body->first(); body->more(i); i = body->next(i)) {
+        Expression e = dynamic_cast<Expression>(body->nth(i));
+        expr_type = e->checkExprType();
+    }
+    return expr_type;
+}
+
+Symbol neg_class::checkExprType() {
+    Symbol e1_type = e1->checkExprType();
+    if(e1_type != Int) {
+        cout << "lt error" << endl;
+    }
+    return Int;
+}
+
+Symbol lt_class::checkExprType() {
+    Symbol e1_type = e1->checkExprType();
+    Symbol e2_type = e2->checkExprType();
+    if(e1_type != Int || e2_type != Int) {
+        cout << "lt error" << endl;
+    }
+    return Bool;
+}
+
+Symbol eq_class::checkExprType() {
+    Symbol e1_type = e1->checkExprType();
+    Symbol e2_type = e2->checkExprType();
+    if(e1_type != Int || e2_type != Int) {
+        cout << "eq error" << endl;
+    }
+    return Bool;
+}
+
+Symbol leq_class::checkExprType() {
+    Symbol e1_type = e1->checkExprType();
+    Symbol e2_type = e2->checkExprType();
+    if(e1_type != Int || e2_type != Int) {
+        cout << "leq error" << endl;
+    }
+    return Bool;
+}
+
+Symbol isvoid_class::checkExprType() {
+    Symbol e1_type = e1->checkExprType();
+    return Bool;
+}
+
+// ignore SELF_TYPE first
+Symbol static_dispatch_class::checkExprType() {
+    Symbol expr_type = expr->checkExprType();
+    if(!classtable->lookup_inheritance(expr_type,type_name)) {
+        cout << "static dispatch error: expr_type and type_name is not equal" << endl;
+    }
+    Symbol return_type = Object;
+    if(classtable->lookup_class(type_name) != NULL) {
+        method_class *method = classtable->lookup_method(type_name,name);
+        if(method != NULL) {
+            Formals formals = method->get_formals();
+            if(formals->len() != actual->len()) {
+                cout << "static dispatch error: argument length not equal" << endl;
+            }
+            for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
+                Symbol formal_type = dynamic_cast<formal_class *>(formals->nth(i))->get_type_decl();
+                Symbol actual_type = actual->nth(i)->checkExprType();
+                if(!classtable->lookup_inheritance(actual_type,formal_type)) {
+                    cout << "static dispatch error:actual_type and formal_type not equal" << endl;
+                }
+            }
+            return_type = method->get_return_type();
+        }
+        else {
+            cout << "method not found" << endl;
+        }
+    }
+    else {
+        cout << "type not found" << endl;
+    }
+    return return_type;
+}
+
+// ignore SELF_TYPE first
+Symbol dispatch_class::checkExprType() {
+    Symbol expr_type = expr->checkExprType();
+    Symbol return_type = Object;
+    if(classtable->lookup_class(expr_type) != NULL) {
+        method_class *method = classtable->lookup_method(expr_type,name);
+        if(method != NULL) {
+            Formals formals = method->get_formals();
+            if(formals->len() != actual->len()) {
+                cout << "dispatch error: argument length not equal" << endl;
+            }
+            for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
+                Symbol formal_type = dynamic_cast<formal_class *>(formals->nth(i))->get_type_decl();
+                Symbol actual_type = actual->nth(i)->checkExprType();
+                if(!classtable->lookup_inheritance(actual_type,formal_type)) {
+                    cout << "dispatch error:actual_type and formal_type not equal" << endl;
+                }
+            }
+            return_type = method->get_return_type();
+        }
+        else {
+            cout << "method not found" << endl;
+        }
+    }
+    else {
+        cout << "type not found" << endl;
+    }
+    return return_type;
+}
+
+Symbol typcase_class::checkExprType() {
+   return Object; 
 }
 
 Symbol let_class::checkExprType() {
     return Object;
-}
-
-Symbol sub_class::checkExprType() {
-    return Object;
-}
-
-Symbol mul_class::checkExprType() {
-    return Object;
-}
-
-Symbol divide_class::checkExprType() {
-    return Object;
-}
-
-Symbol neg_class::checkExprType() {
-    return Object;
-}
-
-Symbol lt_class::checkExprType() {
-    return Object;
-}
-
-Symbol eq_class::checkExprType() {
-    return Object;
-}
-
-Symbol leq_class::checkExprType() {
-    return Object;
-}
-
-Symbol isvoid_class::checkExprType() {
-    return Object;
-}
+}    
 
 /*   This is the entry point to the semantic checker.
 

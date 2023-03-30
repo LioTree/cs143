@@ -11,7 +11,6 @@
 
 #include "tree.h"
 #include "cool-tree.handcode.h"
-#include "semant.h"
 
 
 // define the class for phylum
@@ -196,6 +195,8 @@ public:
    Feature copy_Feature();
    void dump(ostream& stream, int n);
    Symbol get_name() { return name; }
+   Formals get_formals() { return formals; }
+   Symbol get_return_type() { return return_type; }
    void checkFeatureType();
 
 #ifdef Feature_SHARED_EXTRAS

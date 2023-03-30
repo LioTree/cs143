@@ -28,15 +28,17 @@ private:
   ostream& error_stream;
   std::map<Symbol,Class_> classes;
   std::map<Symbol,std::vector<Symbol>> inheritance_graph;
-  std::map<Symbol,std::map<Symbol,int>> class_methods;
-  std::map<Symbol,std::map<Symbol,int>> class_attrs;
+  std::map<Symbol,std::map<Symbol,method_class *>> class_methods;
+  std::map<Symbol,std::map<Symbol,attr_class *>> class_attrs;
 
 public:
   ClassTable(Classes);
   void check_inheritance();
   void dfs_inheritance(Symbol current_class,std::map<Symbol, int> & visited);
   bool lookup_inheritance(Symbol child,Symbol parent);
-  bool lookup_class(Symbol name);
+  Symbol lub(Symbol class1, Symbol class2);
+  Class_ lookup_class(Symbol name);
+  method_class *lookup_method(Symbol class_name,Symbol method_name);
   int errors() { return semant_errors; }
   ostream& semant_error();
   ostream& semant_error(Class_ c);

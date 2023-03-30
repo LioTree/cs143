@@ -1,7 +1,7 @@
 class Factorial {
 
     main(n:Bool): Object {
-        while true loop
+        while n loop
             new A
         pool
     };
