@@ -87,6 +87,7 @@ static ClassTable *classtable;
 ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(cerr) {
     /* Fill this in */
     install_basic_classes();
+    main_exists = false;
     for (int i = user_classes->first(); user_classes->more(i); i = user_classes->next(i)) {
         class__class *c = dynamic_cast<class__class *>(user_classes->nth(i));
         if(classes.find(c->get_name()) != classes.end()) {
@@ -95,6 +96,9 @@ ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(c
         }
         classes[c->get_name()] = c; 
         init_methods_attrs(c);
+    }
+    if(!main_exists) {
+        semant_error() << "Class Main is not defined." << endl;
     }
 
     for (auto it = classes.begin(); it != classes.end(); it++) {
@@ -116,6 +120,9 @@ void ClassTable::init_methods_attrs(class__class *c) {
         if (dynamic_cast<method_class *>(feature)) {
             method_class *method = dynamic_cast<method_class *>(feature);
             Symbol method_name = method->get_name();
+            if(method_name == main_meth) {
+                main_exists = true;
+            }
             if(class_methods[class_name].find(method_name) != class_methods[class_name].end()) {
                 semant_error(c) << "method multi define" << endl;
             //    exit(0);
@@ -396,6 +403,7 @@ void attr_class::checkFeatureType() {
 }
 
 Symbol int_const_class::checkExprType() {
+    type = Int;
     return Int; 
 }
 
@@ -405,6 +413,7 @@ Symbol plus_class::checkExprType() {
     if(e1_type != Int || e2_type != Int) {
         cout << "plus error" << endl;
     }
+    type = Int;
     return Int;
 }
 
@@ -414,6 +423,7 @@ Symbol sub_class::checkExprType() {
     if(e1_type != Int || e2_type != Int) {
         cout << "sub error" << endl;
     }
+    type = Int;
     return Int;
 }
 
@@ -423,6 +433,7 @@ Symbol mul_class::checkExprType() {
     if(e1_type != Int || e2_type != Int) {
         cout << "mul error" << endl;
     }
+    type = Int;
     return Int;
 }
 
@@ -432,14 +443,17 @@ Symbol divide_class::checkExprType() {
     if(e1_type != Int || e2_type != Int) {
         cout << "divide error" << endl;
     }
+    type = Int;
     return Int;
 }
 
 Symbol bool_const_class::checkExprType() {
+    type = Bool;
     return Bool;
 }
 
 Symbol string_const_class::checkExprType() {
+    type = Str;
     return Str;
 }
 
@@ -448,6 +462,7 @@ Symbol new__class::checkExprType() {
     if(classtable->lookup_class(type_name) == NULL) {
         cout << "new error" << endl;
     }
+    type = type_name;
     return type_name;
 }
 
@@ -456,6 +471,7 @@ Symbol comp_class::checkExprType() {
     if(e1_type != Bool) {
         cout << "comp error" << endl;
     }
+    type = Bool;
     return Bool;
 }
 
@@ -464,6 +480,7 @@ Symbol loop_class::checkExprType() {
     if(pred_type != Bool) {
         cout << "loop error" << endl;
     }
+    type = Object;
     return Object;
 }
 
@@ -473,10 +490,12 @@ Symbol object_class::checkExprType() {
         cout << "unknown variable" << endl;
         name_type = Object;
     }
+    type = name_type;
     return name_type;
 }
 
 Symbol no_expr_class::checkExprType() {
+    type = No_type;
     return No_type;
 }
 
@@ -490,6 +509,7 @@ Symbol assign_class::checkExprType() {
     if(!classtable->lookup_inheritance(expr_type,var_type)) {
         cout << "assign error" << endl;
     }
+    type = expr_type;
     return expr_type;
 }
 
@@ -500,6 +520,7 @@ Symbol cond_class::checkExprType() {
     if(pred_type != Bool) {
         cout << "cond error" << endl;
     }
+    type = classtable->lub(then_type,else_type);
     return classtable->lub(then_type,else_type);
 }
 
@@ -510,6 +531,7 @@ Symbol block_class::checkExprType() {
         Expression e = dynamic_cast<Expression>(body->nth(i));
         expr_type = e->checkExprType();
     }
+    type = expr_type;
     return expr_type;
 }
 
@@ -518,6 +540,7 @@ Symbol neg_class::checkExprType() {
     if(e1_type != Int) {
         cout << "lt error" << endl;
     }
+    type = Int;
     return Int;
 }
 
@@ -527,6 +550,7 @@ Symbol lt_class::checkExprType() {
     if(e1_type != Int || e2_type != Int) {
         cout << "lt error" << endl;
     }
+    type = Bool;
     return Bool;
 }
 
@@ -536,6 +560,7 @@ Symbol eq_class::checkExprType() {
     if(e1_type != Int || e2_type != Int) {
         cout << "eq error" << endl;
     }
+    type = Bool;
     return Bool;
 }
 
@@ -545,11 +570,13 @@ Symbol leq_class::checkExprType() {
     if(e1_type != Int || e2_type != Int) {
         cout << "leq error" << endl;
     }
+    type = Bool;
     return Bool;
 }
 
 Symbol isvoid_class::checkExprType() {
     Symbol e1_type = e1->checkExprType();
+    type = Bool;
     return Bool;
 }
 
@@ -583,6 +610,7 @@ Symbol static_dispatch_class::checkExprType() {
     else {
         cout << "type not found" << endl;
     }
+    type = return_type;
     return return_type;
 }
 
@@ -613,6 +641,7 @@ Symbol dispatch_class::checkExprType() {
     else {
         cout << "type not found" << endl;
     }
+    type = return_type;
     return return_type;
 }
 

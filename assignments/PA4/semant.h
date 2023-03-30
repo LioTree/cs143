@@ -30,6 +30,7 @@ private:
   std::map<Symbol,std::vector<Symbol>> inheritance_graph;
   std::map<Symbol,std::map<Symbol,method_class *>> class_methods;
   std::map<Symbol,std::map<Symbol,attr_class *>> class_attrs;
+  bool main_exists;
 
 public:
   ClassTable(Classes);
