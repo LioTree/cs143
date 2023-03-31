@@ -373,7 +373,7 @@ ostream& ClassTable::semant_error()
 
 void class__class::checkClassType() {
     symbol_table->enterscope();
-    symbol_table->addid(self,name);
+    symbol_table->addid(self,SELF_TYPE);
     classtable->set_self_type(name);
     current_filename = this->get_filename();
     Features features = get_features();
@@ -447,7 +447,7 @@ Symbol plus_class::checkExprType() {
     Symbol e1_type = e1->checkExprType();
     Symbol e2_type = e2->checkExprType();
     if(e1_type != Int || e2_type != Int) {
-        cout << "plus error" << endl;
+        classtable->semant_error(current_filename,this) << "non-Int arguments: " << e1_type << " + " << e2_type << endl;
     }
     type = Int;
     return Int;
@@ -457,7 +457,7 @@ Symbol sub_class::checkExprType() {
     Symbol e1_type = e1->checkExprType();
     Symbol e2_type = e2->checkExprType();
     if(e1_type != Int || e2_type != Int) {
-        cout << "sub error" << endl;
+        classtable->semant_error(current_filename,this) << "non-Int arguments: " << e1_type << " + " << e2_type << endl;
     }
     type = Int;
     return Int;
@@ -467,7 +467,7 @@ Symbol mul_class::checkExprType() {
     Symbol e1_type = e1->checkExprType();
     Symbol e2_type = e2->checkExprType();
     if(e1_type != Int || e2_type != Int) {
-        cout << "mul error" << endl;
+        classtable->semant_error(current_filename,this) << "non-Int arguments: " << e1_type << " + " << e2_type << endl;
     }
     type = Int;
     return Int;
@@ -477,7 +477,7 @@ Symbol divide_class::checkExprType() {
     Symbol e1_type = e1->checkExprType();
     Symbol e2_type = e2->checkExprType();
     if(e1_type != Int || e2_type != Int) {
-        cout << "divide error" << endl;
+        classtable->semant_error(current_filename,this) << "non-Int arguments: " << e1_type << " + " << e2_type << endl;
     }
     type = Int;
     return Int;
@@ -665,10 +665,12 @@ Symbol dispatch_class::checkExprType() {
                 cout << "dispatch error: argument length not equal" << endl;
             }
             for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
-                Symbol formal_type = dynamic_cast<formal_class *>(formals->nth(i))->get_type_decl();
+                formal_class *formal = dynamic_cast<formal_class *>(formals->nth(i));  
+                Symbol formal_type = formal->get_type_decl();
+                Symbol formal_name = formal->get_name();
                 Symbol actual_type = actual->nth(i)->checkExprType();
                 if(!classtable->lookup_inheritance(actual_type,formal_type)) {
-                    cout << "dispatch error:actual_type and formal_type not equal" << endl;
+                    classtable->semant_error(current_filename,this) << "In call of method " << name << ", type " << actual_type << "of parameter" << formal_name << "does not conform to declared type" << expr_type << "." << endl;
                 }
             }
             return_type = method->get_return_type();
