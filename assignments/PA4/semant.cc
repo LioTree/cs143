@@ -200,6 +200,17 @@ Class_ ClassTable::lookup_class(Symbol name) {
     return classes.find(name) != classes.end()?classes[name]:NULL;
 }
 
+void ClassTable::get_parent_attrs(Symbol class_name,std::vector<attr_class *> &attrs) {
+    for(auto it = inheritance_graph[class_name].begin(); it != inheritance_graph[class_name].end(); it++) {
+        for(auto it2 = class_attrs[*it].begin(); it2 != class_attrs[*it].end(); it2++) {
+            attrs.push_back(it2->second);
+        }
+        if(*it != No_class) {
+            get_parent_attrs(*it,attrs);
+        }
+    }
+}
+
 method_class *ClassTable::lookup_method(Symbol class_name,Symbol method_name) {
     while(class_name != No_class) {
         if(class_methods[class_name].find(method_name) != class_methods[class_name].end()) {
@@ -359,6 +370,12 @@ void class__class::checkClassType() {
     symbol_table->addid(self,name);
     current_filename = this->get_filename();
     Features features = get_features();
+    // add attributes of parent classes to symbol table
+    std::vector<attr_class *> parent_attrs;
+    classtable->get_parent_attrs(name,parent_attrs);
+    for(auto it = parent_attrs.begin(); it != parent_attrs.end(); ++it) {
+        symbol_table->addid((*it)->get_name(),(*it)->get_type_decl());
+    }
     // check type of attributes first
     for (int i = features->first(); features->more(i); i = features->next(i)) {
         Feature feature = features->nth(i);
@@ -397,6 +414,9 @@ void method_class::checkFeatureType() {
 void attr_class::checkFeatureType() {
     if(name == self) {
         classtable->semant_error(current_filename,this) << "'self' cannot be the name of an attribute." << endl;
+    }
+    if(symbol_table->lookup(name) != NULL) {
+        classtable->semant_error(current_filename,this) << "Attribute " << name << " is an attribute of an inherited class." << endl;
     }
     if(dynamic_cast<no_expr_class *>(init) == NULL) {
         Symbol init_type = init->checkExprType();

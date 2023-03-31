@@ -41,6 +41,7 @@ public:
   Symbol lub(Symbol class1, Symbol class2);
   Class_ lookup_class(Symbol name);
   method_class *lookup_method(Symbol class_name,Symbol method_name);
+  void get_parent_attrs(Symbol class_name,std::vector<attr_class *> &attrs);
   int errors() { return semant_errors; }
   ostream& semant_error();
   ostream& semant_error(Class_ c);
