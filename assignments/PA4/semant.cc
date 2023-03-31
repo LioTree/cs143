@@ -390,7 +390,7 @@ void method_class::checkFeatureType() {
     Symbol expr_type = expr->checkExprType();
     symbol_table->exitscope();
     if(!classtable->lookup_inheritance(expr_type,return_type)) {
-        classtable->semant_error(current_filename,this) << "Inferred return type " << expr_type->get_string() << " of method " << name->get_string() << " does not match declared return type " << return_type->get_string() << " does not conform to declared return type " << return_type->get_string() << "." << endl;
+        classtable->semant_error(current_filename,this) << "Inferred return type " << expr_type << " of method " << name << " does not match declared return type " << return_type << " does not conform to declared return type " << return_type << "." << endl;
     }
 }
 
@@ -515,7 +515,7 @@ Symbol assign_class::checkExprType() {
         var_type = Object;
     }
     if(!classtable->lookup_inheritance(expr_type,var_type)) {
-        cout << "assign error" << endl;
+        classtable->semant_error(current_filename,this) << "Type " << expr_type << "of assigned expression does not conform to declared type " << var_type << " of identifier " << name << "." << endl;
     }
     type = expr_type;
     return expr_type;
@@ -643,7 +643,7 @@ Symbol dispatch_class::checkExprType() {
             return_type = method->get_return_type();
         }
         else {
-            classtable->semant_error(current_filename,this) << "Dispatch to undefined method " << name->get_string() << "." << endl;
+            classtable->semant_error(current_filename,this) << "Dispatch to undefined method " << name << "." << endl;
         }
     }
     else {
