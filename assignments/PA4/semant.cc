@@ -106,8 +106,7 @@ ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(c
         Symbol name = it->first;
         Symbol parent = dynamic_cast<class__class *>(it->second)->get_parent();
         if(parent != No_class && classes.find(parent) == classes.end()) {
-            semant_error(it->second) << "parent class not found" << endl;
-            exit(0);
+            semant_error(it->second) << "Class " << name << " inherits from an undefined class " << parent << "." << endl;
         }
         inheritance_graph[name].push_back(parent);
     }
