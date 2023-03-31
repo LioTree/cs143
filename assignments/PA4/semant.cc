@@ -108,6 +108,9 @@ ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(c
         if(parent != No_class && classes.find(parent) == classes.end()) {
             semant_error(it->second) << "Class " << name << " inherits from an undefined class " << parent << "." << endl;
         }
+        if(parent == Int || parent == Bool || parent == Str) {
+            semant_error(it->second) << "Class " << name << " cannot inherit class " << parent << "." << endl;
+        }
         inheritance_graph[name].push_back(parent);
     }
 }
