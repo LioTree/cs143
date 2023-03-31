@@ -201,6 +201,7 @@ Symbol ClassTable::lub(Symbol class1, Symbol class2) {
 
 
 Class_ ClassTable::lookup_class(Symbol name) {
+    name = (name == SELF_TYPE) ? self_type : name;
     return classes.find(name) != classes.end()?classes[name]:NULL;
 }
 
