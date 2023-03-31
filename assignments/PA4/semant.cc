@@ -169,10 +169,10 @@ void ClassTable::dfs_inheritance(Symbol current_class,std::map<Symbol, int> & vi
 }
 
 bool ClassTable::lookup_inheritance(Symbol child,Symbol parent) {
-    if(child == parent)
-        return true;
     child = (child == SELF_TYPE) ? self_type : child;
     parent = (parent == SELF_TYPE) ? self_type : parent;
+    if(child == parent)
+        return true;
     for(auto it = inheritance_graph[child].begin(); it != inheritance_graph[child].end(); it++) {
         if(*it == parent || lookup_inheritance(*it,parent)) {
             return true;
@@ -551,7 +551,7 @@ Symbol assign_class::checkExprType() {
         var_type = Object;
     }
     if(!classtable->lookup_inheritance(expr_type,var_type)) {
-        classtable->semant_error(current_filename,this) << "Type " << expr_type << "of assigned expression does not conform to declared type " << var_type << " of identifier " << name << "." << endl;
+        classtable->semant_error(current_filename,this) << "Type " << expr_type << " of assigned expression does not conform to declared type " << var_type << " of identifier " << name << "." << endl;
     }
     type = expr_type;
     return expr_type;
@@ -675,7 +675,7 @@ Symbol dispatch_class::checkExprType() {
                 Symbol formal_name = formal->get_name();
                 Symbol actual_type = actual->nth(i)->checkExprType();
                 if(!classtable->lookup_inheritance(actual_type,formal_type)) {
-                    classtable->semant_error(current_filename,this) << "In call of method " << name << ", type " << actual_type << "of parameter" << formal_name << "does not conform to declared type" << expr_type << "." << endl;
+                    classtable->semant_error(current_filename,this) << "In call of method " << name << ", type " << actual_type << " of parameter " << formal_name << " does not conform to declared type" << expr_type << "." << endl;
                 }
             }
             return_type = method->get_return_type();
