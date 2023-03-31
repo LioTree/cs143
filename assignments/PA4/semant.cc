@@ -168,6 +168,8 @@ void ClassTable::dfs_inheritance(Symbol current_class,std::map<Symbol, int> & vi
 bool ClassTable::lookup_inheritance(Symbol child,Symbol parent) {
     if(child == parent)
         return true;
+    child = (child == SELF_TYPE) ? self_type : child;
+    parent = (parent == SELF_TYPE) ? self_type : parent;
     for(auto it = inheritance_graph[child].begin(); it != inheritance_graph[child].end(); it++) {
         if(*it == parent || lookup_inheritance(*it,parent)) {
             return true;
@@ -180,6 +182,8 @@ Symbol ClassTable::lub(Symbol class1, Symbol class2) {
     if(class1 == class2) {
         return class1;
     }
+    class1 = (class1 == SELF_TYPE) ? self_type : class1;
+    class2 = (class2 == SELF_TYPE) ? self_type : class2;
     std::map<Symbol, int> visited;
     visited[class1] = 1;
     while(class1 != No_class) {
@@ -201,6 +205,7 @@ Class_ ClassTable::lookup_class(Symbol name) {
 }
 
 void ClassTable::get_parent_attrs(Symbol class_name,std::vector<attr_class *> &attrs) {
+    class_name = (class_name == SELF_TYPE) ? self_type : class_name;
     for(auto it = inheritance_graph[class_name].begin(); it != inheritance_graph[class_name].end(); it++) {
         for(auto it2 = class_attrs[*it].begin(); it2 != class_attrs[*it].end(); it2++) {
             attrs.push_back(it2->second);
@@ -212,6 +217,7 @@ void ClassTable::get_parent_attrs(Symbol class_name,std::vector<attr_class *> &a
 }
 
 method_class *ClassTable::lookup_method(Symbol class_name,Symbol method_name) {
+    class_name = (class_name == SELF_TYPE) ? self_type : class_name;
     while(class_name != No_class) {
         if(class_methods[class_name].find(method_name) != class_methods[class_name].end()) {
             return class_methods[class_name][method_name];
@@ -368,6 +374,7 @@ ostream& ClassTable::semant_error()
 void class__class::checkClassType() {
     symbol_table->enterscope();
     symbol_table->addid(self,name);
+    classtable->set_self_type(name);
     current_filename = this->get_filename();
     Features features = get_features();
     // add attributes of parent classes to symbol table
@@ -401,6 +408,10 @@ void method_class::checkFeatureType() {
         formal_class *formal = dynamic_cast<formal_class *>(formals->nth(i));
         Symbol formal_type = formal->get_type_decl();
         Symbol formal_name = formal->get_name();
+        if(formal_type == SELF_TYPE) {
+            classtable->semant_error(current_filename,this) << "Formal parameter " << formal_name << " cannot have type SELF_TYPE." << endl;
+            formal_type = Object;
+        }
         symbol_table->addid(formal_name,formal_type);
     }
 

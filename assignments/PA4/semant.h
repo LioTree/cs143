@@ -31,6 +31,7 @@ private:
   std::map<Symbol,std::map<Symbol,method_class *>> class_methods;
   std::map<Symbol,std::map<Symbol,attr_class *>> class_attrs;
   bool main_exists;
+  Symbol self_type;
 
 public:
   ClassTable(Classes);
@@ -43,6 +44,8 @@ public:
   method_class *lookup_method(Symbol class_name,Symbol method_name);
   void get_parent_attrs(Symbol class_name,std::vector<attr_class *> &attrs);
   int errors() { return semant_errors; }
+  void set_self_type(Symbol type) { self_type = type; }
+  Symbol get_self_type() { return self_type; }
   ostream& semant_error();
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
