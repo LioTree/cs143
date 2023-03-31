@@ -390,7 +390,7 @@ void method_class::checkFeatureType() {
     Symbol expr_type = expr->checkExprType();
     symbol_table->exitscope();
     if(!classtable->lookup_inheritance(expr_type,return_type)) {
-        classtable->semant_error(current_filename,this) << "Inferred return type " << expr_type->get_string() << "of method " << name->get_string() << " does not match declared return type " << return_type->get_string() << " does not conform to declared return type " << return_type->get_string() << "." << endl;
+        classtable->semant_error(current_filename,this) << "Inferred return type " << expr_type->get_string() << " of method " << name->get_string() << " does not match declared return type " << return_type->get_string() << " does not conform to declared return type " << return_type->get_string() << "." << endl;
     }
 }
 
@@ -492,7 +492,7 @@ Symbol loop_class::checkExprType() {
 Symbol object_class::checkExprType() {
     Symbol name_type = symbol_table->lookup(name);
     if(name_type == NULL) {
-        cout << "unknown variable" << endl;
+        classtable->semant_error(current_filename,this) << "Undeclared identifier moo." << endl;
         name_type = Object;
     }
     type = name_type;
@@ -505,6 +505,9 @@ Symbol no_expr_class::checkExprType() {
 }
 
 Symbol assign_class::checkExprType() {
+    if(name == self) {
+        classtable->semant_error(current_filename,this) << "Cannot assign to 'self'." << endl;
+    }
     Symbol expr_type = expr->checkExprType();
     Symbol var_type = symbol_table->lookup(name);
     if(var_type == NULL) {
