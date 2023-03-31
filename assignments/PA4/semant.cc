@@ -597,7 +597,7 @@ Symbol eq_class::checkExprType() {
     Symbol e1_type = e1->checkExprType();
     Symbol e2_type = e2->checkExprType();
     if(e1_type != Int || e2_type != Int) {
-        cout << "eq error" << endl;
+        classtable->semant_error(current_filename,this) << "non-Int arguments: " << e1_type << " + " << e2_type << endl;
     }
     type = Bool;
     return Bool;
