@@ -83,6 +83,7 @@ static void initialize_constants(void)
 
 static SymbolTable<Symbol,Entry> *symbol_table;
 static ClassTable *classtable;
+static Symbol current_filename;
 
 ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(cerr) {
     /* Fill this in */
@@ -356,6 +357,7 @@ ostream& ClassTable::semant_error()
 void class__class::checkClassType() {
     symbol_table->enterscope();
     symbol_table->addid(self,name);
+    current_filename = this->get_filename();
     Features features = get_features();
     // check type of attributes first
     for (int i = features->first(); features->more(i); i = features->next(i)) {
@@ -388,11 +390,14 @@ void method_class::checkFeatureType() {
     Symbol expr_type = expr->checkExprType();
     symbol_table->exitscope();
     if(!classtable->lookup_inheritance(expr_type,return_type)) {
-        cout << "return type error" << endl;
+        classtable->semant_error(current_filename,this) << "Inferred return type " << expr_type->get_string() << "of method " << name->get_string() << " does not match declared return type " << return_type->get_string() << " does not conform to declared return type " << return_type->get_string() << "." << endl;
     }
 }
 
 void attr_class::checkFeatureType() {
+    if(name == self) {
+        classtable->semant_error(current_filename,this) << "'self' cannot be the name of an attribute." << endl;
+    }
     if(dynamic_cast<no_expr_class *>(init) == NULL) {
         Symbol init_type = init->checkExprType();
         if(!classtable->lookup_inheritance(init_type,type_decl)) {
@@ -635,7 +640,7 @@ Symbol dispatch_class::checkExprType() {
             return_type = method->get_return_type();
         }
         else {
-            cout << "method not found" << endl;
+            classtable->semant_error(current_filename,this) << "Dispatch to undefined method " << name->get_string() << "." << endl;
         }
     }
     else {
