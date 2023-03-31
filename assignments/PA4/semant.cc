@@ -518,8 +518,9 @@ Symbol comp_class::checkExprType() {
 Symbol loop_class::checkExprType() {
     Symbol pred_type = pred->checkExprType(); 
     if(pred_type != Bool) {
-        cout << "loop error" << endl;
+        classtable->semant_error(current_filename,this) << "Loop condition does not have type Bool." << endl;
     }
+    body->checkExprType();
     type = Object;
     return Object;
 }
