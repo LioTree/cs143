@@ -131,7 +131,6 @@ void ClassTable::init_methods_attrs(class__class *c) {
             }
             if(class_methods[class_name].find(method_name) != class_methods[class_name].end()) {
                 semant_error(c) << "method multi define" << endl;
-            //    exit(0);
             }
             class_methods[class_name][method_name] = method;
         }
@@ -140,7 +139,6 @@ void ClassTable::init_methods_attrs(class__class *c) {
             Symbol attr_name = attr->get_name();
             if(class_attrs[class_name].find(attr_name) != class_attrs[class_name].end()) {
                 semant_error(c) << "attribute multi define" << endl;
-            //    exit(0);
             }
             class_attrs[class_name][attr_name] = attr;
         }
@@ -449,7 +447,7 @@ void attr_class::checkFeatureType() {
     if(dynamic_cast<no_expr_class *>(init) == NULL) {
         Symbol init_type = init->checkExprType();
         if(!classtable->lookup_inheritance(init_type,type_decl)) {
-            cout << "attribute init type error" << endl;
+            classtable->semant_error(current_filename,this) << "attribute init type error" << endl;
         }
     }
     symbol_table->addid(name,type_decl);
@@ -522,7 +520,7 @@ Symbol new__class::checkExprType() {
 Symbol comp_class::checkExprType() {
     Symbol e1_type = e1->checkExprType();
     if(e1_type != Bool) {
-        cout << "comp error" << endl;
+        classtable->semant_error(current_filename,this) << "comp error" << endl;
     }
     type = Bool;
     return Bool;
@@ -560,7 +558,7 @@ Symbol assign_class::checkExprType() {
     Symbol expr_type = expr->checkExprType();
     Symbol var_type = symbol_table->lookup(name);
     if(var_type == NULL) {
-        cout << "unknown variable" << endl;
+        classtable->semant_error(current_filename,this) << "unknown variable" << endl;
         var_type = Object;
     }
     if(!classtable->lookup_inheritance(expr_type,var_type)) {
@@ -575,7 +573,7 @@ Symbol cond_class::checkExprType() {
     Symbol then_type = then_exp->checkExprType();
     Symbol else_type = else_exp->checkExprType();
     if(pred_type != Bool) {
-        cout << "cond error" << endl;
+        classtable->semant_error(current_filename,this) << "cond error" << endl;
     }
     type = classtable->lub(then_type,else_type);
     return classtable->lub(then_type,else_type);
@@ -595,7 +593,7 @@ Symbol block_class::checkExprType() {
 Symbol neg_class::checkExprType() {
     Symbol e1_type = e1->checkExprType();
     if(e1_type != Int) {
-        cout << "lt error" << endl;
+        classtable->semant_error(current_filename,this) << "lt error" << endl;
     }
     type = Int;
     return Int;
@@ -605,7 +603,7 @@ Symbol lt_class::checkExprType() {
     Symbol e1_type = e1->checkExprType();
     Symbol e2_type = e2->checkExprType();
     if(e1_type != Int || e2_type != Int) {
-        cout << "lt error" << endl;
+        classtable->semant_error(current_filename,this) << "lt error" << endl;
     }
     type = Bool;
     return Bool;
@@ -627,7 +625,7 @@ Symbol leq_class::checkExprType() {
     Symbol e1_type = e1->checkExprType();
     Symbol e2_type = e2->checkExprType();
     if(e1_type != Int || e2_type != Int) {
-        cout << "leq error" << endl;
+        classtable->semant_error(current_filename,this) << "leq error" << endl;
     }
     type = Bool;
     return Bool;
@@ -650,23 +648,23 @@ Symbol static_dispatch_class::checkExprType() {
         if(method != NULL) {
             Formals formals = method->get_formals();
             if(formals->len() != actual->len()) {
-                cout << "static dispatch error: argument length not equal" << endl;
+                classtable->semant_error(current_filename,this) << "static dispatch error: argument length not equal" << endl;
             }
             for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
                 Symbol formal_type = dynamic_cast<formal_class *>(formals->nth(i))->get_type_decl();
                 Symbol actual_type = actual->nth(i)->checkExprType();
                 if(!classtable->lookup_inheritance(actual_type,formal_type)) {
-                    cout << "static dispatch error:actual_type and formal_type not equal" << endl;
+                    classtable->semant_error(current_filename,this) << "static dispatch error:actual_type and formal_type not equal" << endl;
                 }
             }
             return_type = method->get_return_type();
         }
         else {
-            cout << "method not found" << endl;
+            classtable->semant_error(current_filename,this) << "method not found" << endl;
         }
     }
     else {
-        cout << "type not found" << endl;
+        classtable->semant_error(current_filename,this) << "type not found" << endl;
     }
     type = return_type;
     return return_type;
@@ -680,7 +678,7 @@ Symbol dispatch_class::checkExprType() {
         if(method != NULL) {
             Formals formals = method->get_formals();
             if(formals->len() != actual->len()) {
-                cout << "dispatch error: argument length not equal" << endl;
+                classtable->semant_error(current_filename,this) << "dispatch error: argument length not equal" << endl;
             }
             for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
                 formal_class *formal = dynamic_cast<formal_class *>(formals->nth(i));  
@@ -700,7 +698,7 @@ Symbol dispatch_class::checkExprType() {
         }
     }
     else {
-        cout << "type not found" << endl;
+        classtable->semant_error(current_filename,this) << "type not found" << endl;
     }
     type = return_type;
     return return_type;
