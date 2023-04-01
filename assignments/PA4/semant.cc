@@ -416,6 +416,9 @@ void method_class::checkFeatureType() {
             classtable->semant_error(current_filename,this) << "Formal parameter " << formal_name << " cannot have type SELF_TYPE." << endl;
             formal_type = Object;
         }
+        if(formal_name == self) {
+            classtable->semant_error(current_filename,this) << "'self' cannot be the name of a formal parameter." << endl;
+        }
         symbol_table->addid(formal_name,formal_type);
     }
 
