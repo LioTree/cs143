@@ -408,6 +408,9 @@ void class__class::checkClassType() {
 
 void method_class::checkFeatureType() {
     symbol_table->enterscope();
+    if(classtable->lookup_class(return_type) == NULL) {
+        classtable->semant_error(current_filename,this) << "Undefined return type " << return_type << " in method " << name << "." << endl;
+    }
     for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
         formal_class *formal = dynamic_cast<formal_class *>(formals->nth(i));
         Symbol formal_type = formal->get_type_decl();
@@ -503,7 +506,7 @@ Symbol string_const_class::checkExprType() {
 Symbol new__class::checkExprType() {
     // ignore SELF_TYPE first
     if(classtable->lookup_class(type_name) == NULL) {
-        cout << "new error" << endl;
+        classtable->semant_error(current_filename,this) << "'new' used with undefined class " << type_name << "." << endl;
     }
     type = type_name;
     return type_name;
