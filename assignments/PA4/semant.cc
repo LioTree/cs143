@@ -91,10 +91,10 @@ ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(c
     main_exists = false;
     for (int i = user_classes->first(); user_classes->more(i); i = user_classes->next(i)) {
         class__class *c = dynamic_cast<class__class *>(user_classes->nth(i));
-        if(c->get_name() == SELF_TYPE) {
-            semant_error(user_classes->nth(i)) << "Redefinition of basic class SELF_TYPE." << endl;
+        if(c->get_name() == SELF_TYPE || c->get_name() == Object || c->get_name() == Int || c->get_name() == Bool || c->get_name() == Str) {
+            semant_error(user_classes->nth(i)) << "Redefinition of basic class " << c->get_name() << "." << endl;
         }
-        if(classes.find(c->get_name()) != classes.end()) {
+        else if(classes.find(c->get_name()) != classes.end()) {
             semant_error(user_classes->nth(i)) << "class multi define" << endl;
         }
         classes[c->get_name()] = c; 
@@ -736,8 +736,19 @@ void program_class::semant()
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
 
+    if (classtable->errors()) {
+	cerr << "Compilation halted due to static semantic errors." << endl;
+	exit(1);
+    }
+
     /* some semantic analysis code may go here */
     classtable->check_inheritance(); 
+
+    if (classtable->errors()) {
+	cerr << "Compilation halted due to static semantic errors." << endl;
+	exit(1);
+    }
+
     symbol_table = new SymbolTable<Symbol, Entry>();
     for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
         class__class *c = dynamic_cast<class__class *>(classes->nth(i));
