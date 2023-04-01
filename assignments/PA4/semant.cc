@@ -601,8 +601,10 @@ Symbol lt_class::checkExprType() {
 Symbol eq_class::checkExprType() {
     Symbol e1_type = e1->checkExprType();
     Symbol e2_type = e2->checkExprType();
-    if(e1_type != Int || e2_type != Int) {
-        classtable->semant_error(current_filename,this) << "non-Int arguments: " << e1_type << " + " << e2_type << endl;
+    if(e1_type == Int || e1_type == Str || e1_type == Bool || e2_type == Int || e2_type == Str || e2_type == Bool) {
+        if(e1_type != e2_type) {
+            classtable->semant_error(current_filename,this) << "Illegal comparison with a basic type." << endl;
+        }
     }
     type = Bool;
     return Bool;
