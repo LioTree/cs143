@@ -93,7 +93,6 @@ ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(c
         class__class *c = dynamic_cast<class__class *>(user_classes->nth(i));
         if(classes.find(c->get_name()) != classes.end()) {
             semant_error(user_classes->nth(i)) << "class multi define" << endl;
-            // exit(0);
         }
         classes[c->get_name()] = c; 
         init_methods_attrs(c);
@@ -692,6 +691,8 @@ Symbol dispatch_class::checkExprType() {
                 }
             }
             return_type = method->get_return_type();
+            if(return_type == SELF_TYPE)
+                return_type = expr_type;
         }
         else {
             classtable->semant_error(current_filename,this) << "Dispatch to undefined method " << name << "." << endl;
