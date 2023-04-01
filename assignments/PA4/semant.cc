@@ -91,6 +91,9 @@ ClassTable::ClassTable(Classes user_classes) : semant_errors(0) , error_stream(c
     main_exists = false;
     for (int i = user_classes->first(); user_classes->more(i); i = user_classes->next(i)) {
         class__class *c = dynamic_cast<class__class *>(user_classes->nth(i));
+        if(c->get_name() == SELF_TYPE) {
+            semant_error(user_classes->nth(i)) << "Redefinition of basic class SELF_TYPE." << endl;
+        }
         if(classes.find(c->get_name()) != classes.end()) {
             semant_error(user_classes->nth(i)) << "class multi define" << endl;
         }
