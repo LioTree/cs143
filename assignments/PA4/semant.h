@@ -5,6 +5,7 @@
 #include <iostream>  
 #include <map>
 #include <vector>
+#include<unordered_set>
 #include "cool-tree.h"
 #include "stringtab.h"
 #include "symtab.h"

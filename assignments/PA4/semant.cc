@@ -411,6 +411,7 @@ void method_class::checkFeatureType() {
     if(classtable->lookup_class(return_type) == NULL) {
         classtable->semant_error(current_filename,this) << "Undefined return type " << return_type << " in method " << name << "." << endl;
     }
+    std::unordered_set<Symbol> history_formals;
     for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
         formal_class *formal = dynamic_cast<formal_class *>(formals->nth(i));
         Symbol formal_type = formal->get_type_decl();
@@ -422,6 +423,10 @@ void method_class::checkFeatureType() {
         if(formal_name == self) {
             classtable->semant_error(current_filename,this) << "'self' cannot be the name of a formal parameter." << endl;
         }
+        if(history_formals.count(formal_name) > 0) {
+            classtable->semant_error(current_filename,this) << ": Formal parameter " << formal_name << " is multiply defined." << endl;
+        }
+        history_formals.insert(formal_name);
         symbol_table->addid(formal_name,formal_type);
     }
 
