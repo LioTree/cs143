@@ -639,7 +639,6 @@ Symbol isvoid_class::checkExprType() {
     return Bool;
 }
 
-// ignore SELF_TYPE first
 Symbol static_dispatch_class::checkExprType() {
     Symbol expr_type = expr->checkExprType();
     if(!classtable->lookup_inheritance(expr_type,type_name)) {
@@ -673,7 +672,6 @@ Symbol static_dispatch_class::checkExprType() {
     return return_type;
 }
 
-// ignore SELF_TYPE first
 Symbol dispatch_class::checkExprType() {
     Symbol expr_type = expr->checkExprType();
     Symbol return_type = Object;
@@ -713,7 +711,21 @@ Symbol typcase_class::checkExprType() {
 }
 
 Symbol let_class::checkExprType() {
-    return Object;
+    symbol_table->enterscope();
+    if(identifier == self) {
+        classtable->semant_error(current_filename,this) << "'self' cannot be bound in a 'let' expression." << endl;
+    }
+    if(dynamic_cast<no_expr_class *>(init) == NULL) {
+        Symbol init_type = init->checkExprType();
+        if(!classtable->lookup_inheritance(init_type,type_decl)) {
+            classtable->semant_error(current_filename,this) << "Illegal initialization of " << type_decl << "." << endl;
+        }
+    }
+    symbol_table->addid(identifier, type_decl);
+    Symbol body_type = body->checkExprType();
+    symbol_table->exitscope();
+    type = body_type;
+    return body_type;
 }    
 
 /*   This is the entry point to the semantic checker.
