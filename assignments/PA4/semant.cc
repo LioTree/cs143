@@ -642,7 +642,7 @@ Symbol isvoid_class::checkExprType() {
 Symbol static_dispatch_class::checkExprType() {
     Symbol expr_type = expr->checkExprType();
     if(!classtable->lookup_inheritance(expr_type,type_name)) {
-        cout << "static dispatch error: expr_type and type_name is not equal" << endl;
+         classtable->semant_error(current_filename,this) << "Expression type " << expr_type << " does not conform to declared static dispatch type " << type_name << "." << endl;
     }
     Symbol return_type = Object;
     if(classtable->lookup_class(type_name) != NULL) {
