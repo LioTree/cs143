@@ -431,7 +431,7 @@ void method_class::checkFeatureType() {
 
     Symbol expr_type = expr->checkExprType();
     symbol_table->exitscope();
-    if(!classtable->lookup_inheritance(expr_type,return_type)) {
+    if((return_type == SELF_TYPE && expr_type != SELF_TYPE) || !classtable->lookup_inheritance(expr_type,return_type)) {
         classtable->semant_error(current_filename,this) << "Inferred return type " << expr_type << " of method " << name << " does not match declared return type " << return_type << " does not conform to declared return type " << return_type << "." << endl;
     }
 }
