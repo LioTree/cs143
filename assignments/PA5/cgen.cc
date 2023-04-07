@@ -405,7 +405,7 @@ void StringEntry::code_def(ostream& s, int stringclasstag)
 
  /***** Add dispatch information for class String ******/
 
-      s << endl;                                              // dispatch table
+      emit_disptable_ref(Str,s);  s << endl;                  // dispatch table 
       s << WORD;  lensym->code_ref(s);  s << endl;            // string length
   emit_string_constant(s,str);                                // ascii string
   s << ALIGN;                                                 // align to word
@@ -447,7 +447,7 @@ void IntEntry::code_def(ostream &s, int intclasstag)
 
  /***** Add dispatch information for class Int ******/
 
-      s << endl;                                          // dispatch table
+      emit_disptable_ref(Int,s);  s << endl;              // dispatch table
       s << WORD << str << endl;                           // integer value
 }
 
@@ -491,7 +491,7 @@ void BoolConst::code_def(ostream& s, int boolclasstag)
 
  /***** Add dispatch information for class Bool ******/
 
-      s << endl;                                            // dispatch table
+      emit_disptable_ref(Bool,s);  s << endl;               // dispatch table
       s << WORD << val << endl;                             // value (0 or 1)
 }
 
