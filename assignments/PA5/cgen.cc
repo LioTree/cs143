@@ -617,6 +617,13 @@ void CgenClassTable::code_constants()
   code_bools(boolclasstag);
 }
 
+void CgenClassTable::code_prototypes()
+{
+  for(List<CgenNode> *l = nds; l; l = l->tl()) {
+    CgenNodeP node = l->hd();
+    node->code_def(str);
+  }
+}
 
 CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
 {
@@ -831,6 +838,8 @@ void CgenClassTable::code()
 
 //                 Add your code to emit
 //                   - prototype objects
+  if (cgen_debug) cout << "coding prototypes" << endl;
+  code_prototypes();
 //                   - class_nameTab
 //                   - dispatch tables
 //
@@ -867,6 +876,41 @@ CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
    stringtable.add_string(name->get_string());          // Add class name to string table
 }
 
+void CgenNode::get_attr(std::vector<attr_class *> &attrs)
+{
+  if(parentnd)
+    parentnd->get_attr(attrs);
+  for(int i = features->first(); features->more(i); i = features->next(i)) {
+    if(dynamic_cast<attr_class *>(features->nth(i)) != NULL)
+      attrs.push_back(dynamic_cast<attr_class *>(features->nth(i)));
+  }
+}
+
+void CgenNode::code_def(ostream& s)
+{
+  s << WORD << "-1" << endl;
+  emit_protobj_ref(name,s);  s  << LABEL;
+  s << WORD << tag++ << endl;
+  std::vector<attr_class *> attrs;
+  get_attr(attrs);
+  s << WORD << attrs.size() + 3 << endl;
+  s << WORD << name << DISPTAB_SUFFIX << endl;
+  for(auto it = attrs.begin(); it != attrs.end(); it++) {
+    s << WORD;
+    if((*it)->type_decl == Int) {
+      inttable.lookup_string("0")->code_ref(s);
+    }
+    else if((*it)->type_decl == Str) {
+      stringtable.lookup_string("")->code_ref(s);
+    }
+    else if((*it)->type_decl == Bool) {
+      truebool.code_ref(s);
+    }
+    else
+      s << "0";
+    s << endl;
+  }
+}
 
 //******************************************************************
 //
