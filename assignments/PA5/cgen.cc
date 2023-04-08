@@ -625,11 +625,23 @@ void CgenClassTable::code_prototypes()
   }
 }
 
+void CgenClassTable::code_class_nameTab()
+{
+  str << CLASSNAMETAB << LABEL;
+  std::deque<CgenNodeP> classes;
+  for(List<CgenNode> *l = nds; l; l = l->tl())
+    classes.push_front(l->hd());
+  for(auto it = classes.begin(); it != classes.end(); ++it) {
+    str << WORD;  stringtable.lookup_string((*it)->name->get_string())->code_ref(str); str << endl;
+  }
+}
+
 CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
 {
-   stringclasstag = tag++ /* Change to your String class tag here */;
-   intclasstag =    tag++ /* Change to your Int class tag here */;
-   boolclasstag =   tag++ /* Change to your Bool class tag here */;
+   tag = classes->len() + 4; /* tags:  Object:0,IO:1,Int:2,Bool:3,String:4,user classes and so on... */
+   stringclasstag = 4     /* Change to your String class tag here */;
+   intclasstag =    2     /* Change to your Int class tag here */;
+   boolclasstag =   3     /* Change to your Bool class tag here */;
 
    enterscope();
    if (cgen_debug) cout << "Building CgenClassTable" << endl;
@@ -841,6 +853,8 @@ void CgenClassTable::code()
   if (cgen_debug) cout << "coding prototypes" << endl;
   code_prototypes();
 //                   - class_nameTab
+  if (cgen_debug) cout << "coding class_nameTab" << endl;
+  code_class_nameTab();
 //                   - dispatch tables
 //
 
@@ -890,7 +904,7 @@ void CgenNode::code_def(ostream& s)
 {
   s << WORD << "-1" << endl;
   emit_protobj_ref(name,s);  s  << LABEL;
-  s << WORD << tag++ << endl;
+  s << WORD << tag-- << endl;
   std::vector<attr_class *> attrs;
   get_attr(attrs);
   s << WORD << attrs.size() + 3 << endl;
