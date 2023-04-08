@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <vector>
 #include <deque>
+#include <string>
 #include "emit.h"
 #include "cool-tree.h"
 #include "symtab.h"
@@ -33,8 +34,9 @@ private:
    void code_bools(int);
    void code_select_gc();
    void code_constants();
-   void code_prototypes();
+   void code_protObj();
    void code_class_nameTab();
+   void code_dispTab();
 
 // The following creates an inheritance graph from
 // a list of classes.  The graph is implemented as
@@ -71,7 +73,9 @@ public:
    CgenNodeP get_parentnd() { return parentnd; }
    int basic() { return (basic_status == Basic); }
    void code_def(ostream& s);
-   void get_attr(std::vector<attr_class *> &attrs);
+   void get_attrs(std::vector<attr_class *> &attrs);
+   void get_methods(std::vector<std::string>&methods);
+   void code_dispTab(ostream& s);
 };
 
 class BoolConst 

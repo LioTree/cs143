@@ -297,6 +297,62 @@ class_nameTab:
 	.word	str_const11
 	.word	str_const12
 	.word	str_const13
+Main_dispTab:
+	.word	Object.abort
+	.word	Object.type_name
+	.word	Object.copy
+	.word	IO.out_string
+	.word	IO.out_int
+	.word	IO.in_string
+	.word	IO.in_int
+	.word	Main.main
+Test_dispTab:
+	.word	Object.abort
+	.word	Object.type_name
+	.word	Object.copy
+Dog_dispTab:
+	.word	Object.abort
+	.word	Object.type_name
+	.word	Object.copy
+	.word	IO.out_string
+	.word	IO.out_int
+	.word	IO.in_string
+	.word	IO.in_int
+Animal_dispTab:
+	.word	Object.abort
+	.word	Object.type_name
+	.word	Object.copy
+	.word	IO.out_string
+	.word	IO.out_int
+	.word	IO.in_string
+	.word	IO.in_int
+String_dispTab:
+	.word	Object.abort
+	.word	Object.type_name
+	.word	Object.copy
+	.word	String.length
+	.word	String.concat
+	.word	String.substr
+Bool_dispTab:
+	.word	Object.abort
+	.word	Object.type_name
+	.word	Object.copy
+Int_dispTab:
+	.word	Object.abort
+	.word	Object.type_name
+	.word	Object.copy
+IO_dispTab:
+	.word	Object.abort
+	.word	Object.type_name
+	.word	Object.copy
+	.word	IO.out_string
+	.word	IO.out_int
+	.word	IO.in_string
+	.word	IO.in_int
+Object_dispTab:
+	.word	Object.abort
+	.word	Object.type_name
+	.word	Object.copy
 	.globl	heap_start
 heap_start:
 	.word	0

@@ -495,6 +495,7 @@ void BoolConst::code_def(ostream& s, int boolclasstag)
       s << WORD << val << endl;                             // value (0 or 1)
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 //
 //  CgenClassTable methods
@@ -617,7 +618,7 @@ void CgenClassTable::code_constants()
   code_bools(boolclasstag);
 }
 
-void CgenClassTable::code_prototypes()
+void CgenClassTable::code_protObj()
 {
   for(List<CgenNode> *l = nds; l; l = l->tl()) {
     CgenNodeP node = l->hd();
@@ -633,6 +634,14 @@ void CgenClassTable::code_class_nameTab()
     classes.push_front(l->hd());
   for(auto it = classes.begin(); it != classes.end(); ++it) {
     str << WORD;  stringtable.lookup_string((*it)->name->get_string())->code_ref(str); str << endl;
+  }
+}
+
+void CgenClassTable::code_dispTab()
+{
+  for(List<CgenNode> *l = nds; l; l = l->tl()) {
+    CgenNodeP node = l->hd();
+    node->code_dispTab(str);
   }
 }
 
@@ -850,12 +859,14 @@ void CgenClassTable::code()
 
 //                 Add your code to emit
 //                   - prototype objects
-  if (cgen_debug) cout << "coding prototypes" << endl;
-  code_prototypes();
+  if (cgen_debug) cout << "coding protObj" << endl;
+  code_protObj();
 //                   - class_nameTab
   if (cgen_debug) cout << "coding class_nameTab" << endl;
   code_class_nameTab();
 //                   - dispatch tables
+  if (cgen_debug) cout << "coding dispatch tables" << endl;
+  code_dispTab();
 //
 
   if (cgen_debug) cout << "coding global text" << endl;
@@ -890,13 +901,24 @@ CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
    stringtable.add_string(name->get_string());          // Add class name to string table
 }
 
-void CgenNode::get_attr(std::vector<attr_class *> &attrs)
+void CgenNode::get_attrs(std::vector<attr_class *> &attrs)
 {
   if(parentnd)
-    parentnd->get_attr(attrs);
+    parentnd->get_attrs(attrs);
   for(int i = features->first(); features->more(i); i = features->next(i)) {
     if(dynamic_cast<attr_class *>(features->nth(i)) != NULL)
       attrs.push_back(dynamic_cast<attr_class *>(features->nth(i)));
+  }
+}
+
+void CgenNode::get_methods(std::vector<std::string> &methods)
+{
+  if(parentnd)
+    parentnd->get_methods(methods);
+  for(int i = features->first(); features->more(i); i = features->next(i)) {
+    method_class* m = dynamic_cast<method_class *>(features->nth(i));
+    if(m != NULL)
+      methods.push_back(std::string(name->get_string()) + "." + std::string(m->name->get_string()));
   }
 }
 
@@ -906,7 +928,7 @@ void CgenNode::code_def(ostream& s)
   emit_protobj_ref(name,s);  s  << LABEL;
   s << WORD << tag-- << endl;
   std::vector<attr_class *> attrs;
-  get_attr(attrs);
+  get_attrs(attrs);
   s << WORD << attrs.size() + 3 << endl;
   s << WORD << name << DISPTAB_SUFFIX << endl;
   for(auto it = attrs.begin(); it != attrs.end(); it++) {
@@ -923,6 +945,16 @@ void CgenNode::code_def(ostream& s)
     else
       s << "0";
     s << endl;
+  }
+}
+
+void CgenNode::code_dispTab(ostream& s)
+{
+  emit_disptable_ref(name,s);  s << LABEL;
+  std::vector<std::string> methods;
+  get_methods(methods);
+  for(auto it = methods.begin();it != methods.end();it++) {
+    s << WORD << *it << endl;
   }
 }
 
