@@ -37,6 +37,7 @@ private:
    void code_protObj();
    void code_class_nameTab();
    void code_dispTab();
+   void code_object_init();
 
 // The following creates an inheritance graph from
 // a list of classes.  The graph is implemented as
@@ -73,9 +74,10 @@ public:
    CgenNodeP get_parentnd() { return parentnd; }
    int basic() { return (basic_status == Basic); }
    void code_def(ostream& s);
-   void get_attrs(std::vector<attr_class *> &attrs);
+   void get_attrs(std::vector<attr_class *> &attrs, bool inherit);
    void get_methods(std::vector<std::string>&methods);
    void code_dispTab(ostream& s);
+   void code_init(ostream& s);
 };
 
 class BoolConst 

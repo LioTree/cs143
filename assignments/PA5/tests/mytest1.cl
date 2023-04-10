@@ -1,10 +1,10 @@
 class Animal inherits IO {
-   name:Int;
-   name2:Bool;
+   name:Int <- 3;
+   name2:Bool <- true;
 };
 
 class Dog inherits Animal {
-   name3:String;
+   name3:String <- "aaaa";
    name4:Test;
 };
 
@@ -13,7 +13,7 @@ class Test{
 };
 
 class Main inherits IO {
-   dog:Dog <- new Dog;
+   dog:Animal <- new Dog;
    main(): Int {
     {1+2;}
    };

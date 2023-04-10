@@ -24,6 +24,9 @@
 
 #include "cgen.h"
 #include "cgen_gc.h"
+#include "cool-tree.h"
+#include <cstring>
+#include <string>
 
 extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
@@ -569,6 +572,14 @@ void CgenClassTable::code_global_text()
   str << endl;
 }
 
+void CgenClassTable::code_object_init()
+{
+  for(List<CgenNode> *l = nds; l; l = l->tl()) {
+    CgenNodeP node = l->hd();
+    node->code_init(str);
+  }
+}
+
 void CgenClassTable::code_bools(int boolclasstag)
 {
   falsebool.code_def(str,boolclasstag);
@@ -874,6 +885,8 @@ void CgenClassTable::code()
 
 //                 Add your code to emit
 //                   - object initializer
+  if (cgen_debug) cout << "coding object intializer" << endl;
+  code_object_init();
 //                   - the class methods
 //                   - etc...
 
@@ -901,10 +914,10 @@ CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
    stringtable.add_string(name->get_string());          // Add class name to string table
 }
 
-void CgenNode::get_attrs(std::vector<attr_class *> &attrs)
+void CgenNode::get_attrs(std::vector<attr_class *> &attrs, bool inherit)
 {
-  if(parentnd)
-    parentnd->get_attrs(attrs);
+  if(inherit && parentnd)
+    parentnd->get_attrs(attrs,inherit);
   for(int i = features->first(); features->more(i); i = features->next(i)) {
     if(dynamic_cast<attr_class *>(features->nth(i)) != NULL)
       attrs.push_back(dynamic_cast<attr_class *>(features->nth(i)));
@@ -928,7 +941,7 @@ void CgenNode::code_def(ostream& s)
   emit_protobj_ref(name,s);  s  << LABEL;
   s << WORD << tag-- << endl;
   std::vector<attr_class *> attrs;
-  get_attrs(attrs);
+  get_attrs(attrs,true);
   s << WORD << attrs.size() + 3 << endl;
   s << WORD << name << DISPTAB_SUFFIX << endl;
   for(auto it = attrs.begin(); it != attrs.end(); it++) {
@@ -956,6 +969,70 @@ void CgenNode::code_dispTab(ostream& s)
   for(auto it = methods.begin();it != methods.end();it++) {
     s << WORD << *it << endl;
   }
+}
+
+void CgenNode::code_init(ostream &s)
+{
+  emit_init_ref(name,s);  s << LABEL;
+  
+  emit_addiu("$sp", "$sp", -12, s);
+  emit_store("$fp", 3, "$sp", s);
+  emit_store("$s0", 2, "$sp", s);
+  emit_store("$ra", 1, "$sp", s);
+  emit_addiu("$fp", "$sp", 4, s);
+
+  emit_move("$s0", "$a0", s);
+  if(parentnd->name != No_class) {
+    char * address = new char[parentnd->name->get_len() + strlen(CLASSINIT_SUFFIX) + 1];
+    strcpy(address, parentnd->name->get_string());
+    strcpy(address + parentnd->name->get_len(), CLASSINIT_SUFFIX);
+    emit_jal(address, s);
+    delete[] address;
+  }
+
+  std::vector<attr_class *> own_attrs;
+  std::vector<attr_class *> all_attrs;
+  get_attrs(own_attrs,false);
+  get_attrs(all_attrs,true);
+  int index = 0;
+  for(auto it = own_attrs.begin(); it != own_attrs.end(); it++) {
+    Symbol init_type;
+    if((init_type = (*it)->init->type) != NULL) {
+      if((init_type = (*it)->init->type) == Str) {
+        string_const_class * strp = dynamic_cast<string_const_class *>((*it)->init);
+        emit_load_string("$a0", stringtable.lookup_string(strp->token->get_string()), s); 
+      }
+      else if((init_type = (*it)->init->type) == Int) {
+        int_const_class * intp = dynamic_cast<int_const_class *>((*it)->init);
+        emit_load_int("$a0", inttable.lookup_string(intp->token->get_string()), s); 
+      }
+      else if((init_type = (*it)->init->type) == Bool) {
+        bool_const_class * boolp = dynamic_cast<bool_const_class *>((*it)->init);
+        emit_load_bool("$a0",BoolConst(boolp->val),s);
+      }
+      else {
+        char * address = new char[init_type->get_len() + strlen(PROTOBJ_SUFFIX) + 1];
+        strcpy(address, init_type->get_string());
+        strcpy(address + init_type->get_len(), PROTOBJ_SUFFIX);
+        emit_load_address("$a0", address, s);
+        delete [] address;
+        emit_jal("Object.copy", s);
+        address = new char[init_type->get_len() + strlen(CLASSINIT_SUFFIX) + 1];
+        strcpy(address, init_type->get_string());
+        strcpy(address + init_type->get_len(), CLASSINIT_SUFFIX); 
+        emit_jal(address, s);
+      }
+      emit_store("$a0", 3 + (all_attrs.size() - own_attrs.size()) + index,"$s0", s);
+    }
+    index++;
+  }
+
+  emit_move("$a0", "$s0", s);
+  emit_load("$fp", 3, "$sp", s);
+  emit_load("$s0", 2, "$sp", s);
+  emit_load("$ra", 1, "$sp", s);
+  emit_addiu("$sp", "$sp", 12, s);
+  emit_return(s);
 }
 
 //******************************************************************
