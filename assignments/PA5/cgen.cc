@@ -25,7 +25,9 @@
 #include "cgen.h"
 #include "cgen_gc.h"
 #include "cool-tree.h"
+#include "cool-tree.handcode.h"
 #include <cstring>
+#include <ostream>
 #include <string>
 
 extern void emit_string_constant(ostream& str, char *s);
@@ -114,6 +116,7 @@ static char *gc_collect_names[] =
   { "_NoGC_Collect", "_GenGC_Collect", "_ScnGC_Collect" };
 
 static int tag = 0;
+static Environment env = Environment();
 
 //  BoolConst is a class that implements code generation for operations
 //  on the two booleans, which are given global names here.
@@ -580,6 +583,14 @@ void CgenClassTable::code_object_init()
   }
 }
 
+void CgenClassTable::code_methods()
+{
+  for(List<CgenNode> *l = nds; l; l = l->tl()) {
+    CgenNodeP node = l->hd();
+    node->code_methods(str);
+  }
+}
+
 void CgenClassTable::code_bools(int boolclasstag)
 {
   falsebool.code_def(str,boolclasstag);
@@ -888,6 +899,8 @@ void CgenClassTable::code()
   if (cgen_debug) cout << "coding object intializer" << endl;
   code_object_init();
 //                   - the class methods
+  if (cgen_debug) cout << "coding class methods" << endl;
+  code_methods();
 //                   - etc...
 
 }
@@ -935,6 +948,17 @@ void CgenNode::get_methods(std::vector<std::string> &methods)
   }
 }
 
+// another version of get_methods, parameter is std::vector<method_class *> &methods and bool inherit
+void CgenNode::get_methods(std::vector<method_class *> &methods, bool inherit) {
+  if(inherit && parentnd)
+    parentnd->get_methods(methods,inherit);
+  for(int i = features->first(); features->more(i); i = features->next(i)) {
+    method_class* m = dynamic_cast<method_class *>(features->nth(i));
+    if(m != NULL)
+      methods.push_back(m);
+  }
+}
+
 void CgenNode::code_def(ostream& s)
 {
   s << WORD << "-1" << endl;
@@ -971,17 +995,18 @@ void CgenNode::code_dispTab(ostream& s)
   }
 }
 
+//FIXME
 void CgenNode::code_init(ostream &s)
 {
   emit_init_ref(name,s);  s << LABEL;
   
-  emit_addiu("$sp", "$sp", -12, s);
-  emit_store("$fp", 3, "$sp", s);
-  emit_store("$s0", 2, "$sp", s);
-  emit_store("$ra", 1, "$sp", s);
-  emit_addiu("$fp", "$sp", 4, s);
+  emit_addiu(SP, SP, -DEFAULT_OBJFIELDS * WORD_SIZE, s);
+  emit_store(FP, 3, SP, s);
+  emit_store(SELF, 2, SP, s);
+  emit_store(RA, 1, SP, s);
+  emit_addiu(FP, SP, 4, s);
 
-  emit_move("$s0", "$a0", s);
+  emit_move(SELF, ACC, s);
   if(parentnd->name != No_class) {
     char * address = new char[parentnd->name->get_len() + strlen(CLASSINIT_SUFFIX) + 1];
     strcpy(address, parentnd->name->get_string());
@@ -1000,21 +1025,21 @@ void CgenNode::code_init(ostream &s)
     if((init_type = (*it)->init->type) != NULL) {
       if((init_type = (*it)->init->type) == Str) {
         string_const_class * strp = dynamic_cast<string_const_class *>((*it)->init);
-        emit_load_string("$a0", stringtable.lookup_string(strp->token->get_string()), s); 
+        emit_load_string(ACC, stringtable.lookup_string(strp->token->get_string()), s); 
       }
       else if((init_type = (*it)->init->type) == Int) {
         int_const_class * intp = dynamic_cast<int_const_class *>((*it)->init);
-        emit_load_int("$a0", inttable.lookup_string(intp->token->get_string()), s); 
+        emit_load_int(ACC, inttable.lookup_string(intp->token->get_string()), s); 
       }
       else if((init_type = (*it)->init->type) == Bool) {
         bool_const_class * boolp = dynamic_cast<bool_const_class *>((*it)->init);
-        emit_load_bool("$a0",BoolConst(boolp->val),s);
+        emit_load_bool(ACC,BoolConst(boolp->val),s);
       }
       else {
         char * address = new char[init_type->get_len() + strlen(PROTOBJ_SUFFIX) + 1];
         strcpy(address, init_type->get_string());
         strcpy(address + init_type->get_len(), PROTOBJ_SUFFIX);
-        emit_load_address("$a0", address, s);
+        emit_load_address(ACC, address, s);
         delete [] address;
         emit_jal("Object.copy", s);
         address = new char[init_type->get_len() + strlen(CLASSINIT_SUFFIX) + 1];
@@ -1022,17 +1047,78 @@ void CgenNode::code_init(ostream &s)
         strcpy(address + init_type->get_len(), CLASSINIT_SUFFIX); 
         emit_jal(address, s);
       }
-      emit_store("$a0", 3 + (all_attrs.size() - own_attrs.size()) + index,"$s0", s);
+      emit_store(ACC, 3 + (all_attrs.size() - own_attrs.size()) + index,SELF, s);
     }
     index++;
   }
 
-  emit_move("$a0", "$s0", s);
-  emit_load("$fp", 3, "$sp", s);
-  emit_load("$s0", 2, "$sp", s);
-  emit_load("$ra", 1, "$sp", s);
-  emit_addiu("$sp", "$sp", 12, s);
+  emit_move(ACC, SELF, s);
+  emit_load(FP, 3, SP, s);
+  emit_load(SELF, 2, SP, s);
+  emit_load(RA, 1, SP, s);
+  emit_addiu(SP, SP, DEFAULT_OBJFIELDS * WORD_SIZE, s);
   emit_return(s);
+}
+
+void CgenNode::code_methods(ostream& s)
+{
+  env.enterscope();
+  // record offset of attributes in this class
+  std::vector<attr_class *> attrs;
+  get_attrs(attrs,true);
+  int index = 0;
+  for(auto it = attrs.begin(); it != attrs.end(); it++) {
+    //TODO smart pointer?
+    std::string *ref = new std::string(std::to_string((DEFAULT_OBJFIELDS + index) * WORD_SIZE));
+    ref->append("("); ref->append(SELF); ref->append(")");
+    env.addid((*it)->name, ref);
+    index++;
+  }
+  std::vector<method_class *> methods;
+  get_methods(methods,false);
+  // deal with each method
+  for(auto it = methods.begin(); it != methods.end(); it++) {
+    env.enterscope();
+    // generate method name
+    s << name << "." << (*it)->name << LABEL;
+    // get temporaries number
+    int temp_num = (*it)->get_temp_num();
+    env.set_temp_num(temp_num);
+    // record offset of paramters in this methods
+    int i;
+    for(i = (*it)->formals->first(); (*it)->formals->more(i);i = (*it)->formals->next(i)) {
+      //TODO smart pointer?
+      std::string *ref = new std::string(std::to_string(WORD_SIZE * (DEFAULT_OBJFIELDS + temp_num - i)));
+      ref->append("("); ref->append(FP); ref->append(")");
+      env.addid(name, ref);
+    }
+    env.set_param_count(i); // save count of parameters
+    // generate codes which setup stack frame
+    (*it)->setup_stack_frame(s);
+    // generate codes of expr
+    (*it)->expr->code(s);
+    // generate codes which restore stack frame
+    (*it)->restore_stack_frame(s);
+    env.exitscope();
+  }
+  env.exitscope();
+}
+
+void method_class::setup_stack_frame(ostream &stream) {
+  emit_addiu(SP, SP, -(WORD_SIZE * env.get_stack_count()), stream); 
+  emit_store(FP, env.get_stack_count(), SP, stream);
+  emit_store(SELF, env.get_stack_count() - 1, SP, stream);
+  emit_store(RA, env.get_stack_count() - 2, SP, stream);
+  emit_addiu(FP, SP, WORD_SIZE, stream);
+  emit_move(SELF, ACC, stream);
+}
+
+void method_class::restore_stack_frame(ostream &stream) {
+  emit_load(FP, env.get_stack_count(), SP, stream);
+  emit_load(SELF, env.get_stack_count() - 1, SP, stream);
+  emit_load(RA, env.get_stack_count() - 2, SP, stream);
+  emit_addiu(SP, SP, WORD_SIZE * (env.get_stack_count() + env.get_param_count()), stream);
+  emit_return(stream);
 }
 
 //******************************************************************
@@ -1126,4 +1212,166 @@ void no_expr_class::code(ostream &s) {
 void object_class::code(ostream &s) {
 }
 
+///////////////////////////////////////////////////////////////////////
+//
+// get temporaries number of each expr
+//
+///////////////////////////////////////////////////////////////////////
 
+int binary_op_temp(Expression e1,Expression e2)
+{
+  int e1_temp_num = e1->get_temp_num();
+  int e2_temp_num = e2->get_temp_num();
+  return ((e1_temp_num + 1) > e2_temp_num) ? e1_temp_num + 1 : e2_temp_num;
+}
+
+int method_class::get_temp_num()
+{
+  return expr->get_temp_num();
+}
+
+int assign_class::get_temp_num() {
+  return expr->get_temp_num();
+}
+
+int static_dispatch_class::get_temp_num() {
+    int max_temp_num = expr->get_temp_num();
+    for (int i = 0; i < actual->len(); i++) {
+        int temp_num = actual->nth(i)->get_temp_num();
+        if (temp_num > max_temp_num) {
+            max_temp_num = temp_num;
+        }
+    }
+    return max_temp_num;
+}
+
+int dispatch_class::get_temp_num() {
+    int max_temp_num = expr->get_temp_num();
+    for (int i = 0; i < actual->len(); i++) {
+        int temp_num = actual->nth(i)->get_temp_num();
+        if (temp_num > max_temp_num) {
+            max_temp_num = temp_num;
+        }
+    }
+    return max_temp_num;
+}
+
+//TODO
+int cond_class::get_temp_num() {
+    int max_temp_num = pred->get_temp_num();
+    int then_temp_num = then_exp->get_temp_num();
+    int else_temp_num = else_exp->get_temp_num();
+    if (then_temp_num > max_temp_num) {
+        max_temp_num = then_temp_num;
+    }
+    if (else_temp_num > max_temp_num) {
+        max_temp_num = else_temp_num;
+    }
+    return max_temp_num;
+}
+
+//TODO
+int loop_class::get_temp_num() {
+    int max_temp_num = pred->get_temp_num();
+    int body_temp_num = body->get_temp_num();
+    if (body_temp_num > max_temp_num) {
+        max_temp_num = body_temp_num;
+    }
+    return max_temp_num;
+}
+
+//TODO
+int typcase_class::get_temp_num() {
+  /*
+    int max_temp_num = expr->get_temp_num();
+    for (int i = 0; i < cases->len(); i++) {
+        int case_temp_num = cases->nth(i)->get_temp_num();
+        if (case_temp_num > max_temp_num) {
+            max_temp_num = case_temp_num;
+        }
+    }
+    return max_temp_num;
+    */
+    return 0;
+}
+
+int block_class::get_temp_num() {
+    int max_temp_num = 0;
+    for (int i = 0; i < body->len(); i++) {
+        int temp_num = body->nth(i)->get_temp_num();
+        if (temp_num > max_temp_num) {
+            max_temp_num = temp_num;
+        }
+    }
+    return max_temp_num;
+}
+
+int let_class::get_temp_num() {
+  int init_temp_num = init->get_temp_num();
+  int body_temp_num = body->get_temp_num();
+  return 1 + init_temp_num + body_temp_num;
+}
+
+int plus_class::get_temp_num() {
+  return binary_op_temp(e1,e2); 
+}
+
+int sub_class::get_temp_num() {
+  return binary_op_temp(e1,e2); 
+}
+
+int mul_class::get_temp_num() {
+  return binary_op_temp(e1,e2); 
+}
+
+int divide_class::get_temp_num() {
+  return binary_op_temp(e1,e2); 
+}
+
+int neg_class::get_temp_num() {
+  return e1->get_temp_num();
+}
+
+int lt_class::get_temp_num() {
+  return binary_op_temp(e1,e2); 
+}
+
+int eq_class::get_temp_num() {
+  return binary_op_temp(e1,e2); 
+}
+
+int leq_class::get_temp_num() {
+  return binary_op_temp(e1,e2); 
+}
+
+int comp_class::get_temp_num() {
+  return e1->get_temp_num();
+}
+
+int int_const_class::get_temp_num() {
+   return 0;
+}
+
+int bool_const_class::get_temp_num() {
+   return 0;
+}
+
+int string_const_class::get_temp_num() {
+   return 0;
+}
+
+int new__class::get_temp_num() {
+   return 0;
+}
+
+int isvoid_class::get_temp_num() {
+   return e1->get_temp_num();
+}
+
+int no_expr_class::get_temp_num() {
+   return 0;
+}
+
+int object_class::get_temp_num() {
+   return 0;
+}

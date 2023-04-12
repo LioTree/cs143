@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ostream>
 #include <stdio.h>
 #include <vector>
 #include <deque>
@@ -38,6 +39,7 @@ private:
    void code_class_nameTab();
    void code_dispTab();
    void code_object_init();
+   void code_methods();
 
 // The following creates an inheritance graph from
 // a list of classes.  The graph is implemented as
@@ -76,8 +78,10 @@ public:
    void code_def(ostream& s);
    void get_attrs(std::vector<attr_class *> &attrs, bool inherit);
    void get_methods(std::vector<std::string>&methods);
+   void get_methods(std::vector<method_class *>&methods,bool inherit);
    void code_dispTab(ostream& s);
    void code_init(ostream& s);
+   void code_methods(ostream& s);
 };
 
 class BoolConst 
@@ -90,3 +94,16 @@ class BoolConst
   void code_ref(ostream&) const;
 };
 
+class Environment : public SymbolTable<Symbol, std::string>
+{
+   private:
+      int temp_num = 0;
+      int stack_count = 0;
+      int param_count = 0;
+   public:
+      void set_temp_num(int n) { temp_num = n;stack_count = DEFAULT_OBJFIELDS + temp_num; }
+      int get_temp_num() { return temp_num; }
+      int get_stack_count() { return stack_count; }
+      void set_param_count(int n) { param_count = n; }
+      int get_param_count() { return param_count; }
+};
