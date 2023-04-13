@@ -1111,9 +1111,11 @@ void method_class::setup_stack_frame(ostream &stream) {
   emit_store(RA, env.get_stack_count() - 2, SP, stream);
   emit_addiu(FP, SP, WORD_SIZE, stream);
   emit_move(SELF, ACC, stream);
+  //TODO setup $si
 }
 
 void method_class::restore_stack_frame(ostream &stream) {
+  //TODO restore $si
   emit_load(FP, env.get_stack_count(), SP, stream);
   emit_load(SELF, env.get_stack_count() - 1, SP, stream);
   emit_load(RA, env.get_stack_count() - 2, SP, stream);
@@ -1222,7 +1224,7 @@ int binary_op_temp(Expression e1,Expression e2)
 {
   int e1_temp_num = e1->get_temp_num();
   int e2_temp_num = e2->get_temp_num();
-  return ((e1_temp_num + 1) > e2_temp_num) ? e1_temp_num + 1 : e2_temp_num;
+  return ((e1_temp_num) > 1 + e2_temp_num) ? e1_temp_num : 1 + e2_temp_num;
 }
 
 int method_class::get_temp_num()
