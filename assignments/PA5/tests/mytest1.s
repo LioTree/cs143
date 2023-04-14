@@ -30,7 +30,7 @@ str_const12:
 	.word	4
 	.word	5
 	.word	String_dispTab
-	.word	int_const3
+	.word	int_const0
 	.byte	0	
 	.align	2
 	.word	-1
@@ -38,7 +38,7 @@ str_const11:
 	.word	4
 	.word	6
 	.word	String_dispTab
-	.word	int_const4
+	.word	int_const1
 	.ascii	"Main"
 	.byte	0	
 	.align	2
@@ -47,7 +47,7 @@ str_const10:
 	.word	4
 	.word	6
 	.word	String_dispTab
-	.word	int_const5
+	.word	int_const2
 	.ascii	"Arith"
 	.byte	0	
 	.align	2
@@ -56,7 +56,7 @@ str_const9:
 	.word	4
 	.word	6
 	.word	String_dispTab
-	.word	int_const6
+	.word	int_const3
 	.ascii	"String"
 	.byte	0	
 	.align	2
@@ -65,7 +65,7 @@ str_const8:
 	.word	4
 	.word	6
 	.word	String_dispTab
-	.word	int_const4
+	.word	int_const1
 	.ascii	"Bool"
 	.byte	0	
 	.align	2
@@ -74,7 +74,7 @@ str_const7:
 	.word	4
 	.word	5
 	.word	String_dispTab
-	.word	int_const2
+	.word	int_const4
 	.ascii	"Int"
 	.byte	0	
 	.align	2
@@ -83,7 +83,7 @@ str_const6:
 	.word	4
 	.word	5
 	.word	String_dispTab
-	.word	int_const1
+	.word	int_const5
 	.ascii	"IO"
 	.byte	0	
 	.align	2
@@ -92,7 +92,7 @@ str_const5:
 	.word	4
 	.word	6
 	.word	String_dispTab
-	.word	int_const6
+	.word	int_const3
 	.ascii	"Object"
 	.byte	0	
 	.align	2
@@ -101,7 +101,7 @@ str_const4:
 	.word	4
 	.word	7
 	.word	String_dispTab
-	.word	int_const7
+	.word	int_const6
 	.ascii	"_prim_slot"
 	.byte	0	
 	.align	2
@@ -110,7 +110,7 @@ str_const3:
 	.word	4
 	.word	7
 	.word	String_dispTab
-	.word	int_const8
+	.word	int_const7
 	.ascii	"SELF_TYPE"
 	.byte	0	
 	.align	2
@@ -119,7 +119,7 @@ str_const2:
 	.word	4
 	.word	7
 	.word	String_dispTab
-	.word	int_const8
+	.word	int_const7
 	.ascii	"_no_class"
 	.byte	0	
 	.align	2
@@ -128,7 +128,7 @@ str_const1:
 	.word	4
 	.word	8
 	.word	String_dispTab
-	.word	int_const9
+	.word	int_const8
 	.ascii	"<basic class>"
 	.byte	0	
 	.align	2
@@ -137,76 +137,70 @@ str_const0:
 	.word	4
 	.word	9
 	.word	String_dispTab
-	.word	int_const10
+	.word	int_const9
 	.ascii	"tests/mytest1.cl"
 	.byte	0	
 	.align	2
-	.word	-1
-int_const10:
-	.word	2
-	.word	4
-	.word	Int_dispTab
-	.word	16
 	.word	-1
 int_const9:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	13
+	.word	16
 	.word	-1
 int_const8:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	9
+	.word	13
 	.word	-1
 int_const7:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	10
+	.word	9
 	.word	-1
 int_const6:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	6
+	.word	10
 	.word	-1
 int_const5:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	5
+	.word	2
 	.word	-1
 int_const4:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	4
+	.word	3
 	.word	-1
 int_const3:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	0
+	.word	6
 	.word	-1
 int_const2:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	3
+	.word	5
 	.word	-1
 int_const1:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	2
+	.word	4
 	.word	-1
 int_const0:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	1
+	.word	0
 	.word	-1
 bool_const0:
 	.word	3
@@ -234,7 +228,7 @@ String_protObj:
 	.word	4
 	.word	5
 	.word	String_dispTab
-	.word	int_const3
+	.word	int_const0
 	.word	0
 	.word	-1
 Bool_protObj:
@@ -426,16 +420,26 @@ Main.main:
 	addiu	$sp $sp 12
 	jr	$ra	
 Arith.add:
-	addiu	$sp $sp -20
-	sw	$fp 20($sp)
-	sw	$s0 16($sp)
-	sw	$ra 12($sp)
+	addiu	$sp $sp -32
+	sw	$fp 32($sp)
+	sw	$s0 28($sp)
+	sw	$ra 24($sp)
 	addiu	$fp $sp 4
 	move	$s0 $a0
-	lw	$fp 20($sp)
-	lw	$s0 16($sp)
-	lw	$ra 12($sp)
-	addiu	$sp $sp 20
+	sw	$s1 16($fp)
+	sw	$s2 12($fp)
+	sw	$s3 8($fp)
+	sw	$s4 4($fp)
+	sw	$s5 0($fp)
+	lw	$s1 16($fp)
+	lw	$s2 12($fp)
+	lw	$s3 8($fp)
+	lw	$s4 4($fp)
+	lw	$s5 0($fp)
+	lw	$fp 32($sp)
+	lw	$s0 28($sp)
+	lw	$ra 24($sp)
+	addiu	$sp $sp 32
 	jr	$ra	
 String.length:
 	addiu	$sp $sp -12

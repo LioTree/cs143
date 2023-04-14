@@ -190,7 +190,7 @@ public:
    Feature copy_Feature();
    void dump(ostream& stream, int n);
    int get_temp_num();
-   void setup_stack_frame(ostream& stream);
+   void set_stack_frame(ostream& stream);
    void restore_stack_frame(ostream& stream);
 
 #ifdef Feature_SHARED_EXTRAS

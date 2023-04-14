@@ -1094,7 +1094,7 @@ void CgenNode::code_methods(ostream& s)
     }
     env.set_param_count(i); // save count of parameters
     // generate codes which setup stack frame
-    (*it)->setup_stack_frame(s);
+    (*it)->set_stack_frame(s);
     // generate codes of expr
     (*it)->expr->code(s);
     // generate codes which restore stack frame
@@ -1104,18 +1104,22 @@ void CgenNode::code_methods(ostream& s)
   env.exitscope();
 }
 
-void method_class::setup_stack_frame(ostream &stream) {
+void method_class::set_stack_frame(ostream &stream) {
   emit_addiu(SP, SP, -(WORD_SIZE * env.get_stack_count()), stream); 
   emit_store(FP, env.get_stack_count(), SP, stream);
   emit_store(SELF, env.get_stack_count() - 1, SP, stream);
   emit_store(RA, env.get_stack_count() - 2, SP, stream);
   emit_addiu(FP, SP, WORD_SIZE, stream);
   emit_move(SELF, ACC, stream);
-  //TODO setup $si
+  //save $s1-$s6
+  for(int i = 0; i < SAVE_REG_COUNT && i < env.get_temp_num(); i++) 
+    emit_store(save_reg[i], env.get_temp_num() - 1 - i, FP, stream);
 }
 
 void method_class::restore_stack_frame(ostream &stream) {
-  //TODO restore $si
+  // restore $s1-$s6
+  for(int i = 0; i < SAVE_REG_COUNT && i < env.get_temp_num(); i++) 
+    emit_load(save_reg[i], env.get_temp_num() - 1 - i, FP, stream);
   emit_load(FP, env.get_stack_count(), SP, stream);
   emit_load(SELF, env.get_stack_count() - 1, SP, stream);
   emit_load(RA, env.get_stack_count() - 2, SP, stream);

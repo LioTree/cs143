@@ -1,6 +1,6 @@
 class Arith{
    add():Int {
-      1 + (2 + 3)
+     let a:Int,b:Int,c:Int,d:Int,e:Int in ~e
    };
 };
 

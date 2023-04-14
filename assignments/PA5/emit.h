@@ -75,6 +75,9 @@
 #define FP   "$fp"		// Frame pointer 
 #define RA   "$ra"		// Return address 
 
+char * save_reg[] = {"$s1","$s2","$s3","$s4","$s5","$s6"};
+#define SAVE_REG_COUNT 6
+
 //
 // Opcodes
 //
