@@ -1068,9 +1068,7 @@ void CgenNode::code_methods(ostream& s)
   get_attrs(attrs,true);
   int index = 0;
   for(auto it = attrs.begin(); it != attrs.end(); it++) {
-    //TODO smart pointer?
-    std::string *ref = new std::string(std::to_string((DEFAULT_OBJFIELDS + index) * WORD_SIZE));
-    ref->append("("); ref->append(SELF); ref->append(")");
+    Reference * ref = new OffsetRef(SELF,DEFAULT_OBJFIELDS + index);
     env.addid((*it)->name, ref);
     index++;
   }
@@ -1087,10 +1085,9 @@ void CgenNode::code_methods(ostream& s)
     // record offset of paramters in this methods
     int i;
     for(i = (*it)->formals->first(); (*it)->formals->more(i);i = (*it)->formals->next(i)) {
-      //TODO smart pointer?
-      std::string *ref = new std::string(std::to_string(WORD_SIZE * (DEFAULT_OBJFIELDS + temp_num - i)));
-      ref->append("("); ref->append(FP); ref->append(")");
-      env.addid(name, ref);
+      Reference * ref = new OffsetRef(FP,DEFAULT_OBJFIELDS + temp_num - i);
+      env.addid((*it)->name, ref);
+      index++;
     }
     env.set_param_count(i); // save count of parameters
     // generate codes which setup stack frame

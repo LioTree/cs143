@@ -94,7 +94,31 @@ class BoolConst
   void code_ref(ostream&) const;
 };
 
-class Environment : public SymbolTable<Symbol, std::string>
+class Reference
+{
+   private:
+      char *regname;
+   public:
+      Reference(char *r) { regname = r; }
+      char *get_regname() { return regname; }
+      void set_regname(char *r) { regname = r; }
+};
+
+class RegisterRef : public Reference
+{
+};
+
+class OffsetRef : public Reference
+{
+   private:
+      int offset;
+   public:
+      OffsetRef(char *r, int o) : Reference(r) { offset = o; }
+      int get_offset() { return offset; }
+      void set_offset(int o) { offset = o; }
+};
+
+class Environment : public SymbolTable<Symbol, Reference>
 {
    private:
       int temp_num = 0;
