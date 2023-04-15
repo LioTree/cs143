@@ -1,0 +1,15 @@
+PA?/lexer
+PA?/cgen
+PA?/semant
+PA?/parser
+PA?/*.o
+PA?/*.d
+PA?/*.output
+PA3/cool-parse.cc
+PA3/cool.tab.c
+PA?/pa?-grading.pl
+PA?/grading/*
+PA?/compile_commands.json
+PA?/.clangd
+PA?/.fuse_hidden*
+PA?/.gdb_history
