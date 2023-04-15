@@ -1134,85 +1134,109 @@ void method_class::restore_stack_frame(ostream &stream) {
 //
 //*****************************************************************
 
-void assign_class::code(ostream &s) {
+Reference assign_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void static_dispatch_class::code(ostream &s) {
+Reference static_dispatch_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void dispatch_class::code(ostream &s) {
+Reference dispatch_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void cond_class::code(ostream &s) {
+Reference cond_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void loop_class::code(ostream &s) {
+Reference loop_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void typcase_class::code(ostream &s) {
+Reference typcase_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void block_class::code(ostream &s) {
+Reference block_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void let_class::code(ostream &s) {
+Reference let_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void plus_class::code(ostream &s) {
+Reference plus_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void sub_class::code(ostream &s) {
+Reference sub_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void mul_class::code(ostream &s) {
+Reference mul_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void divide_class::code(ostream &s) {
+Reference divide_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void neg_class::code(ostream &s) {
+Reference neg_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void lt_class::code(ostream &s) {
+Reference lt_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void eq_class::code(ostream &s) {
+Reference eq_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void leq_class::code(ostream &s) {
+Reference leq_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void comp_class::code(ostream &s) {
+Reference comp_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void int_const_class::code(ostream& s)  
+Reference int_const_class::code(ostream& s)  
 {
   //
   // Need to be sure we have an IntEntry *, not an arbitrary Symbol
   //
   emit_load_int(ACC,inttable.lookup_string(token->get_string()),s);
+  return Reference(ACC);
 }
 
-void string_const_class::code(ostream& s)
+Reference string_const_class::code(ostream& s)
 {
   emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
+  return Reference(ACC);
 }
 
-void bool_const_class::code(ostream& s)
+Reference bool_const_class::code(ostream& s)
 {
   emit_load_bool(ACC, BoolConst(val), s);
+  return Reference(ACC);
 }
 
-void new__class::code(ostream &s) {
+Reference new__class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void isvoid_class::code(ostream &s) {
+Reference isvoid_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void no_expr_class::code(ostream &s) {
+Reference no_expr_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
-void object_class::code(ostream &s) {
+Reference object_class::code(ostream &s) {
+  return Reference(ACC);
 }
 
 ///////////////////////////////////////////////////////////////////////
