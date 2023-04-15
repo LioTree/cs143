@@ -96,16 +96,20 @@ class BoolConst
 
 class Reference
 {
-   private:
+   protected:
       char *regname;
    public:
       Reference(char *r) { regname = r; }
-      char *get_regname() { return regname; }
+      // just need a virtual method to make Reference a polymorphic class
+      virtual char *get_regname() = 0; 
       void set_regname(char *r) { regname = r; }
 };
 
 class RegisterRef : public Reference
 {
+   using Reference::Reference;
+   public:
+      char *get_regname() { return regname; }
 };
 
 class OffsetRef : public Reference
@@ -115,19 +119,22 @@ class OffsetRef : public Reference
    public:
       OffsetRef(char *r, int o) : Reference(r) { offset = o; }
       int get_offset() { return offset; }
-      void set_offset(int o) { offset = o; }
+      char *get_regname() { return regname; }
 };
 
 class Environment : public SymbolTable<Symbol, Reference>
 {
    private:
       int temp_num = 0;
-      int stack_count = 0;
-      int param_count = 0;
+      int param_num = 0;
+      std::vector<Reference *> temporaries;
+      int temporaries_index = 0;
    public:
-      void set_temp_num(int n) { temp_num = n;stack_count = DEFAULT_OBJFIELDS + temp_num; }
+      void set_temp_num(int n);
       int get_temp_num() { return temp_num; }
-      int get_stack_count() { return stack_count; }
-      void set_param_count(int n) { param_count = n; }
-      int get_param_count() { return param_count; }
+      void set_param_num(int n) { param_num = n; }
+      int get_param_num() { return param_num; }
+      void forward_temporaries_index(int n) { temporaries_index += n; }
+      void back_temporaries_index(int n) { temporaries_index -= n; }
+      Reference *get_new_temporary() { return temporaries[temporaries_index++]; };
 };

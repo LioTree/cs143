@@ -1086,10 +1086,9 @@ void CgenNode::code_methods(ostream& s)
     int i;
     for(i = (*it)->formals->first(); (*it)->formals->more(i);i = (*it)->formals->next(i)) {
       Reference * ref = new OffsetRef(FP,DEFAULT_OBJFIELDS + temp_num - i);
-      env.addid((*it)->name, ref);
-      index++;
+      env.addid(dynamic_cast<formal_class *>((*it)->formals->nth(i))->name, ref);
     }
-    env.set_param_count(i); // save count of parameters
+    env.set_param_num(i); // save count of parameters
     // generate codes which setup stack frame
     (*it)->set_stack_frame(s);
     // generate codes of expr
@@ -1102,25 +1101,27 @@ void CgenNode::code_methods(ostream& s)
 }
 
 void method_class::set_stack_frame(ostream &stream) {
-  emit_addiu(SP, SP, -(WORD_SIZE * env.get_stack_count()), stream); 
-  emit_store(FP, env.get_stack_count(), SP, stream);
-  emit_store(SELF, env.get_stack_count() - 1, SP, stream);
-  emit_store(RA, env.get_stack_count() - 2, SP, stream);
+  int stack_count = DEFAULT_OBJFIELDS + env.get_temp_num();
+  emit_addiu(SP, SP, -(WORD_SIZE * stack_count), stream); 
+  emit_store(FP, stack_count, SP, stream);
+  emit_store(SELF, stack_count - 1, SP, stream);
+  emit_store(RA, stack_count - 2, SP, stream);
   emit_addiu(FP, SP, WORD_SIZE, stream);
   emit_move(SELF, ACC, stream);
   //save $s1-$s6
   for(int i = 0; i < SAVE_REG_COUNT && i < env.get_temp_num(); i++) 
-    emit_store(save_reg[i], env.get_temp_num() - 1 - i, FP, stream);
+    emit_store(save_regs[i], env.get_temp_num() - 1 - i, FP, stream);
 }
 
 void method_class::restore_stack_frame(ostream &stream) {
+  int stack_count = DEFAULT_OBJFIELDS + env.get_temp_num();
   // restore $s1-$s6
   for(int i = 0; i < SAVE_REG_COUNT && i < env.get_temp_num(); i++) 
-    emit_load(save_reg[i], env.get_temp_num() - 1 - i, FP, stream);
-  emit_load(FP, env.get_stack_count(), SP, stream);
-  emit_load(SELF, env.get_stack_count() - 1, SP, stream);
-  emit_load(RA, env.get_stack_count() - 2, SP, stream);
-  emit_addiu(SP, SP, WORD_SIZE * (env.get_stack_count() + env.get_param_count()), stream);
+    emit_load(save_regs[i], env.get_temp_num() - 1 - i, FP, stream);
+  emit_load(FP, stack_count, SP, stream);
+  emit_load(SELF, stack_count - 1, SP, stream);
+  emit_load(RA, stack_count - 2, SP, stream);
+  emit_addiu(SP, SP, WORD_SIZE * (stack_count + env.get_param_num()), stream);
   emit_return(stream);
 }
 
@@ -1134,109 +1135,135 @@ void method_class::restore_stack_frame(ostream &stream) {
 //
 //*****************************************************************
 
-Reference assign_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * assign_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference static_dispatch_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * static_dispatch_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference dispatch_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * dispatch_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference cond_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * cond_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference loop_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * loop_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference typcase_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * typcase_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference block_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * block_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference let_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * let_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference plus_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * plus_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference sub_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * sub_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference mul_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * mul_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference divide_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * divide_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference neg_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * neg_class::code(ostream &s) {
+  Reference *e1_ref = e1->code(s);
+  if(dynamic_cast<RegisterRef *>(e1_ref) != NULL) {
+    RegisterRef *reg_ref = static_cast<RegisterRef *>(e1_ref);
+    if(strcmp(reg_ref->get_regname(), ACC)) {
+      emit_move(ACC, reg_ref->get_regname(), s);
+    }
+  }
+  else if(dynamic_cast<OffsetRef *>(e1_ref) != NULL) {
+    OffsetRef *offset_ref = static_cast<OffsetRef *>(e1_ref);
+    emit_load(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
+  }
+  emit_jal("Object.copy", s);
+  emit_load(T1, 3, ACC, s);
+  emit_neg(T1, T1, s);
+  emit_store(T1, 3, ACC, s);
+  return new RegisterRef(ACC);
 }
 
-Reference lt_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * lt_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference eq_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * eq_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference leq_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * leq_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference comp_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * comp_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference int_const_class::code(ostream& s)  
+Reference * int_const_class::code(ostream& s)  
 {
   //
   // Need to be sure we have an IntEntry *, not an arbitrary Symbol
   //
-  emit_load_int(ACC,inttable.lookup_string(token->get_string()),s);
-  return Reference(ACC);
+  Reference * ref = env.get_new_temporary();
+  RegisterRef * reg_ref;
+  OffsetRef * offset_ref;
+  if((reg_ref = static_cast<RegisterRef *>(ref)) != NULL) {
+    emit_load_int(reg_ref->get_regname(),inttable.lookup_string(token->get_string()),s);
+    return reg_ref;
+  }
+  else if((offset_ref = static_cast<OffsetRef *>(ref)) != NULL) {
+    emit_load_int(ACC,inttable.lookup_string(token->get_string()),s);
+    emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
+    return offset_ref;
+  }
 }
 
-Reference string_const_class::code(ostream& s)
+Reference * string_const_class::code(ostream& s)
 {
   emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
-  return Reference(ACC);
+  return new RegisterRef(ACC);
 }
 
-Reference bool_const_class::code(ostream& s)
+Reference * bool_const_class::code(ostream& s)
 {
   emit_load_bool(ACC, BoolConst(val), s);
-  return Reference(ACC);
+  return new RegisterRef(ACC);
 }
 
-Reference new__class::code(ostream &s) {
-  return Reference(ACC);
+Reference * new__class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference isvoid_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * isvoid_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference no_expr_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * no_expr_class::code(ostream &s) {
+  return new RegisterRef(ACC);
 }
 
-Reference object_class::code(ostream &s) {
-  return Reference(ACC);
+Reference * object_class::code(ostream &s) {
+  Reference *ref = env.lookup(name);
+  return ref;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1401,4 +1428,25 @@ int no_expr_class::get_temp_num() {
 
 int object_class::get_temp_num() {
    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+//
+// Environment
+//
+///////////////////////////////////////////////////////////////////////
+
+void Environment::set_temp_num(int n) {
+  temp_num = n;
+  int i;
+  for(i = 0;i < SAVE_REG_COUNT && i < n;i++)
+  {
+    temporaries.push_back(new RegisterRef(save_regs[i]));
+  }
+  for(;i < n;i++)
+  {
+    temporaries.push_back(new OffsetRef(save_regs[i],i - n));
+  }
+  temporaries.push_back(new RegisterRef(ACC));
+  temporaries_index = 0;
 }

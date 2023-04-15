@@ -26,20 +26,11 @@ _MemMgr_COLLECTOR:
 _MemMgr_TEST:
 	.word	0
 	.word	-1
-str_const12:
+str_const11:
 	.word	4
 	.word	5
 	.word	String_dispTab
-	.word	int_const0
-	.byte	0	
-	.align	2
-	.word	-1
-str_const11:
-	.word	4
-	.word	6
-	.word	String_dispTab
-	.word	int_const1
-	.ascii	"Main"
+	.word	int_const2
 	.byte	0	
 	.align	2
 	.word	-1
@@ -47,8 +38,8 @@ str_const10:
 	.word	4
 	.word	6
 	.word	String_dispTab
-	.word	int_const2
-	.ascii	"Arith"
+	.word	int_const3
+	.ascii	"Main"
 	.byte	0	
 	.align	2
 	.word	-1
@@ -56,7 +47,7 @@ str_const9:
 	.word	4
 	.word	6
 	.word	String_dispTab
-	.word	int_const3
+	.word	int_const4
 	.ascii	"String"
 	.byte	0	
 	.align	2
@@ -65,7 +56,7 @@ str_const8:
 	.word	4
 	.word	6
 	.word	String_dispTab
-	.word	int_const1
+	.word	int_const3
 	.ascii	"Bool"
 	.byte	0	
 	.align	2
@@ -74,7 +65,7 @@ str_const7:
 	.word	4
 	.word	5
 	.word	String_dispTab
-	.word	int_const4
+	.word	int_const0
 	.ascii	"Int"
 	.byte	0	
 	.align	2
@@ -92,7 +83,7 @@ str_const5:
 	.word	4
 	.word	6
 	.word	String_dispTab
-	.word	int_const3
+	.word	int_const4
 	.ascii	"Object"
 	.byte	0	
 	.align	2
@@ -135,10 +126,10 @@ str_const1:
 	.word	-1
 str_const0:
 	.word	4
-	.word	9
+	.word	8
 	.word	String_dispTab
 	.word	int_const9
-	.ascii	"tests/mytest1.cl"
+	.ascii	"tests/neg.cl"
 	.byte	0	
 	.align	2
 	.word	-1
@@ -146,7 +137,7 @@ int_const9:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	16
+	.word	12
 	.word	-1
 int_const8:
 	.word	2
@@ -176,31 +167,31 @@ int_const4:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	3
+	.word	6
 	.word	-1
 int_const3:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	6
+	.word	4
 	.word	-1
 int_const2:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	5
+	.word	0
 	.word	-1
 int_const1:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	4
+	.word	1
 	.word	-1
 int_const0:
 	.word	2
 	.word	4
 	.word	Int_dispTab
-	.word	0
+	.word	3
 	.word	-1
 bool_const0:
 	.word	3
@@ -215,20 +206,16 @@ bool_const1:
 	.word	1
 	.word	-1
 Main_protObj:
-	.word	6
-	.word	3
-	.word	Main_dispTab
-	.word	-1
-Arith_protObj:
 	.word	5
-	.word	3
-	.word	Arith_dispTab
+	.word	4
+	.word	Main_dispTab
+	.word	int_const2
 	.word	-1
 String_protObj:
 	.word	4
 	.word	5
 	.word	String_dispTab
-	.word	int_const0
+	.word	int_const2
 	.word	0
 	.word	-1
 Bool_protObj:
@@ -259,21 +246,14 @@ class_nameTab:
 	.word	str_const8
 	.word	str_const9
 	.word	str_const10
-	.word	str_const11
 Main_dispTab:
 	.word	Object.abort
 	.word	Object.type_name
 	.word	Object.copy
-	.word	IO.out_string
-	.word	IO.out_int
-	.word	IO.in_string
-	.word	IO.in_int
 	.word	Main.main
-Arith_dispTab:
-	.word	Object.abort
-	.word	Object.type_name
-	.word	Object.copy
-	.word	Arith.add
+	.word	Main.intconst
+	.word	Main.parameter
+	.word	Main.attribute
 String_dispTab:
 	.word	Object.abort
 	.word	Object.type_name
@@ -317,21 +297,9 @@ Main_init:
 	sw	$ra 4($sp)
 	addiu	$fp $sp 4
 	move	$s0 $a0
-	jal	IO_init
-	move	$a0 $s0
-	lw	$fp 12($sp)
-	lw	$s0 8($sp)
-	lw	$ra 4($sp)
-	addiu	$sp $sp 12
-	jr	$ra	
-Arith_init:
-	addiu	$sp $sp -12
-	sw	$fp 12($sp)
-	sw	$s0 8($sp)
-	sw	$ra 4($sp)
-	addiu	$fp $sp 4
-	move	$s0 $a0
 	jal	Object_init
+	la	$a0 int_const0
+	sw	$a0 12($s0)
 	move	$a0 $s0
 	lw	$fp 12($sp)
 	lw	$s0 8($sp)
@@ -414,32 +382,98 @@ Main.main:
 	sw	$ra 4($sp)
 	addiu	$fp $sp 4
 	move	$s0 $a0
+	la	$a0 int_const1
 	lw	$fp 12($sp)
 	lw	$s0 8($sp)
 	lw	$ra 4($sp)
 	addiu	$sp $sp 12
 	jr	$ra	
-Arith.add:
-	addiu	$sp $sp -32
-	sw	$fp 32($sp)
-	sw	$s0 28($sp)
-	sw	$ra 24($sp)
+Main.intconst:
+	addiu	$sp $sp -12
+	sw	$fp 12($sp)
+	sw	$s0 8($sp)
+	sw	$ra 4($sp)
 	addiu	$fp $sp 4
 	move	$s0 $a0
-	sw	$s1 16($fp)
-	sw	$s2 12($fp)
-	sw	$s3 8($fp)
-	sw	$s4 4($fp)
-	sw	$s5 0($fp)
-	lw	$s1 16($fp)
-	lw	$s2 12($fp)
-	lw	$s3 8($fp)
-	lw	$s4 4($fp)
-	lw	$s5 0($fp)
-	lw	$fp 32($sp)
-	lw	$s0 28($sp)
-	lw	$ra 24($sp)
-	addiu	$sp $sp 32
+	la	$a0 int_const1
+	jal	Object.copy
+	lw	$t1 12($a0)
+	neg	$t1 $t1
+	sw	$t1 12($a0)
+	jal	Object.copy
+	lw	$t1 12($a0)
+	neg	$t1 $t1
+	sw	$t1 12($a0)
+	jal	Object.copy
+	lw	$t1 12($a0)
+	neg	$t1 $t1
+	sw	$t1 12($a0)
+	jal	Object.copy
+	lw	$t1 12($a0)
+	neg	$t1 $t1
+	sw	$t1 12($a0)
+	jal	Object.copy
+	lw	$t1 12($a0)
+	neg	$t1 $t1
+	sw	$t1 12($a0)
+	lw	$fp 12($sp)
+	lw	$s0 8($sp)
+	lw	$ra 4($sp)
+	addiu	$sp $sp 12
+	jr	$ra	
+Main.parameter:
+	addiu	$sp $sp -12
+	sw	$fp 12($sp)
+	sw	$s0 8($sp)
+	sw	$ra 4($sp)
+	addiu	$fp $sp 4
+	move	$s0 $a0
+	lw	$a0 12($fp)
+	jal	Object.copy
+	lw	$t1 12($a0)
+	neg	$t1 $t1
+	sw	$t1 12($a0)
+	jal	Object.copy
+	lw	$t1 12($a0)
+	neg	$t1 $t1
+	sw	$t1 12($a0)
+	jal	Object.copy
+	lw	$t1 12($a0)
+	neg	$t1 $t1
+	sw	$t1 12($a0)
+	jal	Object.copy
+	lw	$t1 12($a0)
+	neg	$t1 $t1
+	sw	$t1 12($a0)
+	lw	$fp 12($sp)
+	lw	$s0 8($sp)
+	lw	$ra 4($sp)
+	addiu	$sp $sp 16
+	jr	$ra	
+Main.attribute:
+	addiu	$sp $sp -12
+	sw	$fp 12($sp)
+	sw	$s0 8($sp)
+	sw	$ra 4($sp)
+	addiu	$fp $sp 4
+	move	$s0 $a0
+	lw	$a0 12($s0)
+	jal	Object.copy
+	lw	$t1 12($a0)
+	neg	$t1 $t1
+	sw	$t1 12($a0)
+	jal	Object.copy
+	lw	$t1 12($a0)
+	neg	$t1 $t1
+	sw	$t1 12($a0)
+	jal	Object.copy
+	lw	$t1 12($a0)
+	neg	$t1 $t1
+	sw	$t1 12($a0)
+	lw	$fp 12($sp)
+	lw	$s0 8($sp)
+	lw	$ra 4($sp)
+	addiu	$sp $sp 12
 	jr	$ra	
 String.length:
 	addiu	$sp $sp -12
