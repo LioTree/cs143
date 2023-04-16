@@ -137,4 +137,5 @@ class Environment : public SymbolTable<Symbol, Reference>
       void forward_temporaries_index(int n) { temporaries_index += n; }
       void back_temporaries_index(int n) { temporaries_index -= n; }
       Reference *get_new_temporary() { return temporaries[temporaries_index++]; };
+      void clear_temporaries();
 };

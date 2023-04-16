@@ -29,6 +29,7 @@
 #include <cstring>
 #include <ostream>
 #include <string>
+#include <vector>
 
 extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
@@ -1096,6 +1097,7 @@ void CgenNode::code_methods(ostream& s)
     // generate codes which restore stack frame
     (*it)->restore_stack_frame(s);
     env.exitscope();
+    env.clear_temporaries();
   }
   env.exitscope();
 }
@@ -1168,6 +1170,20 @@ Reference * let_class::code(ostream &s) {
 }
 
 Reference * plus_class::code(ostream &s) {
+  Reference *e1_ref = e1->code(s);
+  e2->code(s); // reference of e2 should always be ACC(I think)
+  emit_jal("Object.copy", s);
+  // if e1_ref is not a RegisterRef, we need to load it into T1
+  if(dynamic_cast<OffsetRef *>(e1_ref) != NULL) {
+    OffsetRef *e1_offset_ref = dynamic_cast<OffsetRef *>(e1_ref);
+    emit_load(T1, e1_offset_ref->get_offset(), e1_offset_ref->get_regname(), s);
+    e1_ref = new RegisterRef(T1);
+  }
+  emit_load(T2, 3, ACC, s);
+  emit_load(T1, 3, e1_ref->get_regname(), s);
+  emit_add(T1, T1, T2, s);
+  emit_store(T1, 3, ACC, s);
+  env.back_temporaries_index(1);
   return new RegisterRef(ACC);
 }
 
@@ -1185,13 +1201,7 @@ Reference * divide_class::code(ostream &s) {
 
 Reference * neg_class::code(ostream &s) {
   Reference *e1_ref = e1->code(s);
-  if(dynamic_cast<RegisterRef *>(e1_ref) != NULL) {
-    RegisterRef *reg_ref = static_cast<RegisterRef *>(e1_ref);
-    if(strcmp(reg_ref->get_regname(), ACC)) {
-      emit_move(ACC, reg_ref->get_regname(), s);
-    }
-  }
-  else if(dynamic_cast<OffsetRef *>(e1_ref) != NULL) {
+  if(dynamic_cast<OffsetRef *>(e1_ref) != NULL) {
     OffsetRef *offset_ref = static_cast<OffsetRef *>(e1_ref);
     emit_load(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
   }
@@ -1224,13 +1234,13 @@ Reference * int_const_class::code(ostream& s)
   // Need to be sure we have an IntEntry *, not an arbitrary Symbol
   //
   Reference * ref = env.get_new_temporary();
-  RegisterRef * reg_ref;
-  OffsetRef * offset_ref;
-  if((reg_ref = static_cast<RegisterRef *>(ref)) != NULL) {
+  if(dynamic_cast<RegisterRef *>(ref) != NULL) {
+    RegisterRef * reg_ref = dynamic_cast<RegisterRef *>(ref);
     emit_load_int(reg_ref->get_regname(),inttable.lookup_string(token->get_string()),s);
     return reg_ref;
   }
-  else if((offset_ref = static_cast<OffsetRef *>(ref)) != NULL) {
+  else if(dynamic_cast<OffsetRef *>(ref) != NULL) {
+    OffsetRef * offset_ref = dynamic_cast<OffsetRef *>(ref);
     emit_load_int(ACC,inttable.lookup_string(token->get_string()),s);
     emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
     return offset_ref;
@@ -1262,8 +1272,19 @@ Reference * no_expr_class::code(ostream &s) {
 }
 
 Reference * object_class::code(ostream &s) {
-  Reference *ref = env.lookup(name);
-  return ref;
+  OffsetRef *object_ref = dynamic_cast<OffsetRef *>(env.lookup(name));
+  Reference *ref = env.get_new_temporary();
+  if(dynamic_cast<RegisterRef *>(ref) != NULL) {
+    RegisterRef * reg_ref = dynamic_cast<RegisterRef *>(ref);
+    emit_load(reg_ref->get_regname(), object_ref->get_offset(), object_ref->get_regname(), s);
+    return reg_ref;
+  }
+  else if(dynamic_cast<OffsetRef *>(ref) != NULL) {
+    OffsetRef * offset_ref = dynamic_cast<OffsetRef *>(ref);
+    emit_load(ACC, object_ref->get_offset(), object_ref->get_regname(), s);
+    emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
+    return offset_ref;
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1441,12 +1462,19 @@ void Environment::set_temp_num(int n) {
   int i;
   for(i = 0;i < SAVE_REG_COUNT && i < n;i++)
   {
-    temporaries.push_back(new RegisterRef(save_regs[i]));
+    if(n <= SAVE_REG_COUNT)
+      temporaries.push_back(new RegisterRef(save_regs[n - 1 - i]));
+    else
+      temporaries.push_back(new RegisterRef(save_regs[SAVE_REG_COUNT - 1 - i]));
   }
   for(;i < n;i++)
   {
-    temporaries.push_back(new OffsetRef(save_regs[i],i - n));
+    temporaries.push_back(new OffsetRef(FP,i - SAVE_REG_COUNT));
   }
   temporaries.push_back(new RegisterRef(ACC));
   temporaries_index = 0;
+}
+
+void Environment::clear_temporaries() {
+  std::vector<Reference *>().swap(temporaries);
 }
