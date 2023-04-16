@@ -211,6 +211,9 @@ static void emit_move(char *dest_reg, char *source_reg, ostream& s)
 static void emit_neg(char *dest, char *src1, ostream& s)
 { s << NEG << dest << " " << src1 << endl; }
 
+static void emit_binop(char *op,char *dest, char *src1, char *src2, ostream& s)
+{ s << op << dest << " " << src1 << " " << src2 << endl; }
+
 static void emit_add(char *dest, char *src1, char *src2, ostream& s)
 { s << ADD << dest << " " << src1 << " " << src2 << endl; }
 
@@ -1169,7 +1172,7 @@ Reference * let_class::code(ostream &s) {
   return new RegisterRef(ACC);
 }
 
-Reference * plus_class::code(ostream &s) {
+Reference * arith(Expression e1,Expression e2, char *op,ostream &s) {
   Reference *e1_ref = e1->code(s);
   e2->code(s); // reference of e2 should always be ACC(I think)
   emit_jal("Object.copy", s);
@@ -1181,22 +1184,27 @@ Reference * plus_class::code(ostream &s) {
   }
   emit_load(T2, 3, ACC, s);
   emit_load(T1, 3, e1_ref->get_regname(), s);
-  emit_add(T1, T1, T2, s);
+  // emit_add(T1, T1, T2, s);
+  emit_binop(op, T1, T1, T2, s);
   emit_store(T1, 3, ACC, s);
-  env.back_temporaries_index(1);
+  env.back_temporaries_index(1); 
   return new RegisterRef(ACC);
+}
+
+Reference * plus_class::code(ostream &s) {
+  return arith(e1,e2,ADD,s); 
 }
 
 Reference * sub_class::code(ostream &s) {
-  return new RegisterRef(ACC);
+  return arith(e1,e2,SUB,s); 
 }
 
 Reference * mul_class::code(ostream &s) {
-  return new RegisterRef(ACC);
+  return arith(e1,e2,MUL,s); 
 }
 
 Reference * divide_class::code(ostream &s) {
-  return new RegisterRef(ACC);
+  return arith(e1,e2,DIV,s); 
 }
 
 Reference * neg_class::code(ostream &s) {
