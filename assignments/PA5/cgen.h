@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <vector>
 #include <deque>
+#include <stack>
 #include <string>
 #include <memory>
 #include "emit.h"
@@ -11,6 +12,12 @@
 
 using std::shared_ptr;
 using std::dynamic_pointer_cast;
+
+#define REF_PTR shared_ptr<Reference>
+#define REG_PTR shared_ptr<RegisterRef>
+#define OFFSET_PTR shared_ptr<OffsetRef>
+#define TO_REG_PTR dynamic_pointer_cast<RegisterRef>
+#define TO_OFFSET_PTR dynamic_pointer_cast<OffsetRef> 
 
 enum Basicness     {Basic, NotBasic};
 #define TRUE 1
@@ -131,7 +138,8 @@ class Environment : public SymbolTable<Symbol, Reference>
    private:
       int temp_num = 0;
       int param_num = 0;
-      std::vector<std::shared_ptr<Reference>> temporaries;
+      std::vector<shared_ptr<Reference>> temporaries;
+      std::stack<shared_ptr<Reference>> next_varibales;
       int temporaries_index = 0;
    public:
       void set_temp_num(int n);
@@ -140,6 +148,6 @@ class Environment : public SymbolTable<Symbol, Reference>
       int get_param_num() { return param_num; }
       void forward_temporaries_index(int n) { temporaries_index += n; }
       void back_temporaries_index(int n) { temporaries_index -= n; }
-      std::shared_ptr<Reference> get_new_temporary() { return temporaries[temporaries_index++]; };
+      shared_ptr<Reference> get_new_temporary();
       void clear_temporaries();
 };

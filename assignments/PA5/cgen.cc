@@ -1139,45 +1139,74 @@ void method_class::restore_stack_frame(ostream &stream) {
 //
 //*****************************************************************
 
-shared_ptr<Reference> assign_class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
+// TODO
+REF_PTR assign_class::code(ostream &s) {
+  REF_PTR var_ref(env.lookup(name));
+  REF_PTR expr_ref = expr->code(s); 
+
+  if(TO_REG_PTR(expr_ref) != NULL) {
+    if(TO_REG_PTR(var_ref) != NULL) {
+      // reg1 <- reg2 && reg1 != reg2
+      if(strcmp(var_ref->get_regname(),expr_ref->get_regname()))
+        emit_move(var_ref->get_regname(), expr_ref->get_regname(), s);
+    }
+    else if(TO_OFFSET_PTR(var_ref) != NULL) {
+      // offsetr <- reg
+      OFFSET_PTR var_offset_ref = TO_OFFSET_PTR(var_ref);
+      emit_store(expr_ref->get_regname(), var_offset_ref->get_offset(), var_offset_ref->get_regname(), s);
+    }
+  }
+  else if(TO_OFFSET_PTR(expr_ref) != NULL) {
+    OFFSET_PTR expr_offset_ref = TO_OFFSET_PTR(expr_ref);
+    if(TO_REG_PTR(var_ref) != NULL) {
+      // reg <- offset
+      emit_load(var_ref->get_regname(), expr_offset_ref->get_offset(), expr_offset_ref->get_regname(), s);
+    }
+    else if(TO_OFFSET_PTR(var_ref) != NULL) {
+      OFFSET_PTR var_offset_ref = TO_OFFSET_PTR(var_ref);
+      // offset1 <- offset2
+      emit_load(ACC, expr_offset_ref->get_offset(), expr_offset_ref->get_regname(), s);
+      emit_store(ACC, var_offset_ref->get_offset(), var_offset_ref->get_regname(), s);
+    }
+  }
+  return var_ref;
 }
 
-shared_ptr<Reference> static_dispatch_class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
+REF_PTR static_dispatch_class::code(ostream &s) {
+  return REF_PTR(new RegisterRef(ACC));
 }
 
-shared_ptr<Reference> dispatch_class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
+REF_PTR dispatch_class::code(ostream &s) {
+  return REF_PTR(new RegisterRef(ACC));
 }
 
-shared_ptr<Reference> cond_class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
+REF_PTR cond_class::code(ostream &s) {
+  return REF_PTR(new RegisterRef(ACC));
 }
 
-shared_ptr<Reference> loop_class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
+REF_PTR loop_class::code(ostream &s) {
+  return REF_PTR(new RegisterRef(ACC));
 }
 
-shared_ptr<Reference> typcase_class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
+REF_PTR typcase_class::code(ostream &s) {
+  return REF_PTR(new RegisterRef(ACC));
 }
 
-shared_ptr<Reference> block_class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
+REF_PTR block_class::code(ostream &s) {
+  return REF_PTR(new RegisterRef(ACC));
 }
 
-shared_ptr<Reference> let_class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
+REF_PTR let_class::code(ostream &s) {
+  return REF_PTR(new RegisterRef(ACC));
 }
 
-shared_ptr<Reference> arith(Expression e1,Expression e2, char *op,ostream &s) {
-  shared_ptr<Reference> e1_ref = e1->code(s);
+REF_PTR arith(Expression e1,Expression e2, char *op,ostream &s) {
+  REF_PTR e1_ref = e1->code(s);
   e2->code(s); // reference of e2 should always be ACC(I think)
   emit_jal("Object.copy", s);
   // if e1_ref is not a RegisterRef, we need to load it into T1
-  if(dynamic_pointer_cast<OffsetRef>(e1_ref) != NULL) {
-    shared_ptr<OffsetRef> e1_offset_ref = dynamic_pointer_cast<OffsetRef>(e1_ref);
+  if(TO_OFFSET_PTR(e1_ref) != NULL) {
+    OFFSET_PTR e1_offset_ref = TO_OFFSET_PTR(e1_ref);
     emit_load(T1, e1_offset_ref->get_offset(), e1_offset_ref->get_regname(), s);
     e1_ref.reset(new RegisterRef(T1));
   }
@@ -1187,112 +1216,141 @@ shared_ptr<Reference> arith(Expression e1,Expression e2, char *op,ostream &s) {
   emit_binop(op, T1, T1, T2, s);
   emit_store(T1, 3, ACC, s);
   env.back_temporaries_index(1); 
-  return shared_ptr<Reference>(new RegisterRef(ACC));
+  return REF_PTR(new RegisterRef(ACC));
 }
 
-shared_ptr<Reference> plus_class::code(ostream &s) {
+REF_PTR plus_class::code(ostream &s) {
   return arith(e1,e2,ADD,s); 
 }
 
-shared_ptr<Reference> sub_class::code(ostream &s) {
+REF_PTR sub_class::code(ostream &s) {
   return arith(e1,e2,SUB,s); 
 }
 
-shared_ptr<Reference> mul_class::code(ostream &s) {
+REF_PTR mul_class::code(ostream &s) {
   return arith(e1,e2,MUL,s); 
 }
 
-shared_ptr<Reference> divide_class::code(ostream &s) {
+REF_PTR divide_class::code(ostream &s) {
   return arith(e1,e2,DIV,s); 
 }
 
-shared_ptr<Reference> neg_class::code(ostream &s) {
-  shared_ptr<Reference>e1_ref = e1->code(s);
-  if(dynamic_pointer_cast<OffsetRef>(e1_ref) != NULL) {
-    shared_ptr<OffsetRef> offset_ref = dynamic_pointer_cast<OffsetRef>(e1_ref);
+REF_PTR neg_class::code(ostream &s) {
+  REF_PTR e1_ref = e1->code(s);
+  if(TO_OFFSET_PTR(e1_ref) != NULL) {
+    OFFSET_PTR offset_ref = TO_OFFSET_PTR(e1_ref);
     emit_load(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
   }
   emit_jal("Object.copy", s);
   emit_load(T1, 3, ACC, s);
   emit_neg(T1, T1, s);
   emit_store(T1, 3, ACC, s);
-  return shared_ptr<Reference>(new RegisterRef(ACC));
+  return REF_PTR(new RegisterRef(ACC));
 }
 
-shared_ptr<Reference> lt_class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
+REF_PTR lt_class::code(ostream &s) {
+  return REF_PTR(new RegisterRef(ACC));
 }
 
-shared_ptr<Reference> eq_class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
+REF_PTR eq_class::code(ostream &s) {
+  return REF_PTR(new RegisterRef(ACC));
 }
 
-shared_ptr<Reference> leq_class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
+REF_PTR leq_class::code(ostream &s) {
+  return REF_PTR(new RegisterRef(ACC));
 }
 
-shared_ptr<Reference> comp_class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
+REF_PTR comp_class::code(ostream &s) {
+  return REF_PTR(new RegisterRef(ACC));
 }
 
-shared_ptr<Reference> int_const_class::code(ostream& s)  
+REF_PTR int_const_class::code(ostream& s)  
 {
   //
   // Need to be sure we have an IntEntry *, not an arbitrary Symbol
   //
-  shared_ptr<Reference> ref = env.get_new_temporary();
-  if(dynamic_pointer_cast<RegisterRef>(ref) != NULL) {
-    shared_ptr<RegisterRef> reg_ref = dynamic_pointer_cast<RegisterRef>(ref);
+  REF_PTR ref = env.get_new_temporary();
+  if(TO_REG_PTR(ref) != NULL) {
+    REG_PTR reg_ref = TO_REG_PTR(ref);
     emit_load_int(reg_ref->get_regname(),inttable.lookup_string(token->get_string()),s);
     return reg_ref;
   }
-  else if(dynamic_pointer_cast<OffsetRef>(ref) != NULL) {
-    shared_ptr<OffsetRef> offset_ref = dynamic_pointer_cast<OffsetRef>(ref);
+  else if(TO_OFFSET_PTR(ref) != NULL) {
+    OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
     emit_load_int(ACC,inttable.lookup_string(token->get_string()),s);
     emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
     return offset_ref;
   }
 }
 
-shared_ptr<Reference> string_const_class::code(ostream& s)
+REF_PTR string_const_class::code(ostream& s)
 {
-  emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
-  return shared_ptr<Reference>(new RegisterRef(ACC));
-}
-
-shared_ptr<Reference> bool_const_class::code(ostream& s)
-{
-  emit_load_bool(ACC, BoolConst(val), s);
-  return shared_ptr<Reference>(new RegisterRef(ACC));
-}
-
-shared_ptr<Reference> new__class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
-}
-
-shared_ptr<Reference> isvoid_class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
-}
-
-shared_ptr<Reference> no_expr_class::code(ostream &s) {
-  return shared_ptr<Reference>(new RegisterRef(ACC));
-}
-
-shared_ptr<Reference> object_class::code(ostream &s) {
-  // it's a little bit strange for using both smart pointer and pointer, but I don't want to modify framework code of this assignment.
-  OffsetRef *object_ref = dynamic_cast<OffsetRef *>(env.lookup(name));
-  shared_ptr<Reference> ref = env.get_new_temporary();
-  if(dynamic_pointer_cast<RegisterRef>(ref) != NULL) {
-    shared_ptr<RegisterRef> reg_ref = dynamic_pointer_cast<RegisterRef>(ref);
-    emit_load(reg_ref->get_regname(), object_ref->get_offset(), object_ref->get_regname(), s);
+  REF_PTR ref = env.get_new_temporary();
+  if(TO_REG_PTR(ref) != NULL) {
+    REG_PTR reg_ref = TO_REG_PTR(ref);
+    emit_load_string(reg_ref->get_regname(),stringtable.lookup_string(token->get_string()),s);
     return reg_ref;
   }
-  else if(dynamic_pointer_cast<OffsetRef>(ref) != NULL) {
-    shared_ptr<OffsetRef> offset_ref = dynamic_pointer_cast<OffsetRef>(ref);
-    emit_load(ACC, object_ref->get_offset(), object_ref->get_regname(), s);
+  else if(TO_OFFSET_PTR(ref) != NULL) {
+    OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
+    emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
     emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
     return offset_ref;
   }
+  return REF_PTR(new RegisterRef(ACC));
+}
+
+REF_PTR bool_const_class::code(ostream& s)
+{
+  emit_load_bool(ACC, BoolConst(val), s);
+
+  REF_PTR ref = env.get_new_temporary();
+  if(TO_REG_PTR(ref) != NULL) {
+    REG_PTR reg_ref = TO_REG_PTR(ref);
+    emit_load_bool(reg_ref->get_regname(),BoolConst(val),s);
+    return reg_ref;
+  }
+  else if(TO_OFFSET_PTR(ref) != NULL) {
+    OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
+    emit_load_bool(ACC,BoolConst(val),s);
+    emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
+    return offset_ref;
+  }
+  return REF_PTR(new RegisterRef(ACC));
+}
+
+REF_PTR new__class::code(ostream &s) {
+  return REF_PTR(new RegisterRef(ACC));
+}
+
+REF_PTR isvoid_class::code(ostream &s) {
+  return REF_PTR(new RegisterRef(ACC));
+}
+
+REF_PTR no_expr_class::code(ostream &s) {
+  return REF_PTR(new RegisterRef(ACC));
+}
+
+REF_PTR object_class::code(ostream &s) {
+  // it's a little bit strange for using both smart pointer and pointer, but I don't want to modify framework code of this assignment.
+  REF_PTR object_ref(env.lookup(name));
+  REF_PTR ref = env.get_new_temporary();
+
+  if(TO_OFFSET_PTR(object_ref) != NULL) {
+    OFFSET_PTR object_offset_ref = TO_OFFSET_PTR(object_ref);
+    if(TO_REG_PTR(ref) != NULL) {
+      REG_PTR reg_ref = TO_REG_PTR(ref);
+      emit_load(reg_ref->get_regname(), object_offset_ref->get_offset(), object_offset_ref->get_regname(), s);
+      return reg_ref;
+    }
+    else if(TO_OFFSET_PTR(ref) != NULL) {
+      OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
+      emit_load(ACC, object_offset_ref->get_offset(), object_offset_ref->get_regname(), s);
+      emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
+      return offset_ref;
+    }
+  }
+  // TODO: only consider object which is an attribute or parameter now
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1471,18 +1529,25 @@ void Environment::set_temp_num(int n) {
   for(i = 0;i < SAVE_REG_COUNT && i < n;i++)
   {
     if(n <= SAVE_REG_COUNT)
-      temporaries.push_back(shared_ptr<RegisterRef>(new RegisterRef(save_regs[n - 1 - i])));
+      temporaries.push_back(REG_PTR(new RegisterRef(save_regs[n - 1 - i])));
     else
-      temporaries.push_back(shared_ptr<RegisterRef>(new RegisterRef(save_regs[SAVE_REG_COUNT - 1 - i])));
+      temporaries.push_back(REG_PTR(new RegisterRef(save_regs[SAVE_REG_COUNT - 1 - i])));
   }
   for(;i < n;i++)
   {
-    temporaries.push_back(shared_ptr<OffsetRef>(new OffsetRef(FP,i - SAVE_REG_COUNT)));
+    temporaries.push_back(OFFSET_PTR(new OffsetRef(FP,i - SAVE_REG_COUNT)));
   }
-  temporaries.push_back(shared_ptr<RegisterRef>(new RegisterRef(ACC)));
+  temporaries.push_back(REG_PTR(new RegisterRef(ACC)));
   temporaries_index = 0;
 }
 
 void Environment::clear_temporaries() {
-  std::vector<shared_ptr<Reference>>().swap(temporaries);
+  std::vector<REF_PTR>().swap(temporaries);
+}
+
+REF_PTR Environment::get_new_temporary() {
+  if(next_varibales.empty())
+    return temporaries[temporaries_index++];
+  else 
+    return next_varibales.top();
 }
