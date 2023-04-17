@@ -4,9 +4,13 @@
 #include <vector>
 #include <deque>
 #include <string>
+#include <memory>
 #include "emit.h"
 #include "cool-tree.h"
 #include "symtab.h"
+
+using std::shared_ptr;
+using std::dynamic_pointer_cast;
 
 enum Basicness     {Basic, NotBasic};
 #define TRUE 1
@@ -127,7 +131,7 @@ class Environment : public SymbolTable<Symbol, Reference>
    private:
       int temp_num = 0;
       int param_num = 0;
-      std::vector<Reference *> temporaries;
+      std::vector<std::shared_ptr<Reference>> temporaries;
       int temporaries_index = 0;
    public:
       void set_temp_num(int n);
@@ -136,6 +140,6 @@ class Environment : public SymbolTable<Symbol, Reference>
       int get_param_num() { return param_num; }
       void forward_temporaries_index(int n) { temporaries_index += n; }
       void back_temporaries_index(int n) { temporaries_index -= n; }
-      Reference *get_new_temporary() { return temporaries[temporaries_index++]; };
+      std::shared_ptr<Reference> get_new_temporary() { return temporaries[temporaries_index++]; };
       void clear_temporaries();
 };

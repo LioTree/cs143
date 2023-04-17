@@ -5,6 +5,7 @@
 #define COOL_TREE_HANDCODE_H
 
 #include <iostream>
+#include <memory>
 #include "tree.h"
 #include "cool.h"
 #include "stringtab.h"
@@ -97,13 +98,13 @@ class Reference;
 Symbol type;                                 \
 Symbol get_type() { return type; }           \
 Expression set_type(Symbol s) { type = s; return this; } \
-virtual Reference *code(ostream&) = 0; \
+virtual std::shared_ptr<Reference> code(ostream&) = 0; \
 virtual void dump_with_types(ostream&,int) = 0;  \
 void dump_type(ostream&, int);               \
 Expression_class() { type = (Symbol) NULL; }
 
 #define Expression_SHARED_EXTRAS           \
-Reference *code(ostream&); 			   \
+std::shared_ptr<Reference> code(ostream&); 			   \
 void dump_with_types(ostream&,int); 
 
 
