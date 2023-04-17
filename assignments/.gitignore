@@ -13,3 +13,4 @@ PA?/compile_commands.json
 PA?/.clangd
 PA?/.fuse_hidden*
 PA?/.gdb_history
+PA?/lib
