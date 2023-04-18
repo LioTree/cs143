@@ -109,3 +109,10 @@ char * save_regs[] = {"$s1","$s2","$s3","$s4","$s5","$s6"};
 #define BGT      "\tbgt\t"
 
 
+#define BUILD_ADDRESS(prefix,suffix) std::unique_ptr<char []> address(new char[prefix->get_len() + strlen(suffix) + 1]);\
+                                     strcpy(address.get(), prefix->get_string());\
+                                     strcpy(address.get() + prefix->get_len(), suffix)
+
+#define RESET_ADDRESS(prefix,suffix) address.reset(new char[prefix->get_len() + strlen(suffix) + 1]);\
+                                     strcpy(address.get(), prefix->get_string());\
+                                     strcpy(address.get() + prefix->get_len(), suffix)

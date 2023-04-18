@@ -1013,9 +1013,7 @@ void CgenNode::code_init(ostream &s)
 
   emit_move(SELF, ACC, s);
   if(parentnd->name != No_class) {
-    std::unique_ptr<char []> address(new char[parentnd->name->get_len() + strlen(CLASSINIT_SUFFIX) + 1]);
-    strcpy(address.get(), parentnd->name->get_string());
-    strcpy(address.get() + parentnd->name->get_len(), CLASSINIT_SUFFIX);
+    BUILD_ADDRESS(parentnd->name, CLASSINIT_SUFFIX);
     emit_jal(address.get(), s);
   }
 
@@ -1040,14 +1038,10 @@ void CgenNode::code_init(ostream &s)
         emit_load_bool(ACC,BoolConst(boolp->val),s);
       }
       else {
-        std::unique_ptr<char []> address(new char[init_type->get_len() + strlen(PROTOBJ_SUFFIX) + 1]);
-        strcpy(address.get(), init_type->get_string());
-        strcpy(address.get() + init_type->get_len(), PROTOBJ_SUFFIX);
+        BUILD_ADDRESS(init_type, PROTOBJ_SUFFIX);
         emit_load_address(ACC, address.get(), s);
         emit_jal("Object.copy", s);
-        address.reset(new char[init_type->get_len() + strlen(CLASSINIT_SUFFIX) + 1]);
-        strcpy(address.get(), init_type->get_string());
-        strcpy(address.get() + init_type->get_len(), CLASSINIT_SUFFIX); 
+        RESET_ADDRESS(init_type, CLASSINIT_SUFFIX);
         emit_jal(address.get(), s);
       }
       emit_store(ACC, 3 + (all_attrs.size() - own_attrs.size()) + index,SELF, s);
@@ -1302,15 +1296,12 @@ REF_PTR bool_const_class::code(ostream& s)
 }
 
 REF_PTR new__class::code(ostream &s) {
-  std::unique_ptr<char []> address(new char[type_name->get_len() + strlen(PROTOBJ_SUFFIX) + 1]);
-  strcpy(address.get(), type_name->get_string());
-  strcpy(address.get() + type_name->get_len(), PROTOBJ_SUFFIX);
+  BUILD_ADDRESS(type_name, PROTOBJ_SUFFIX);
   emit_load_address(ACC, address.get(), s);
   emit_jal("Object.copy", s);
-  address.reset(new char[type_name->get_len() + strlen(CLASSINIT_SUFFIX) + 1]);
-  strcpy(address.get(), type_name->get_string());
-  strcpy(address.get() + type_name->get_len(), CLASSINIT_SUFFIX);
+  RESET_ADDRESS(type_name, CLASSINIT_SUFFIX);
   emit_jal(address.get(), s);
+
   return REF_PTR(new RegisterRef(ACC));
 }
 
