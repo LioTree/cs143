@@ -1088,7 +1088,7 @@ void CgenNode::code_methods(ostream& s)
     // record offset of paramters in this methods
     int i;
     for(i = (*it)->formals->first(); (*it)->formals->more(i);i = (*it)->formals->next(i)) {
-      Reference * ref = new OffsetRef(FP,DEFAULT_OBJFIELDS + temp_num - i);
+      Reference * ref = new OffsetRef(FP,DEFAULT_OBJFIELDS + temp_num + (*it)->formals->len() - 1 - i);
       env.addid(dynamic_cast<formal_class *>((*it)->formals->nth(i))->name, ref);
     }
     env.set_param_num(i); // save count of parameters
@@ -1139,37 +1139,22 @@ void method_class::restore_stack_frame(ostream &stream) {
 //
 //*****************************************************************
 
-// TODO
 REF_PTR assign_class::code(ostream &s) {
-  REF_PTR var_ref(env.lookup(name));
-  REF_PTR expr_ref = expr->code(s); 
+  Reference *var_ref = env.lookup(name);
+  REG_PTR expr_ref = TO_REG_PTR(expr->code(s)); //should always be reference of ACC
 
-  if(TO_REG_PTR(expr_ref) != NULL) {
-    if(TO_REG_PTR(var_ref) != NULL) {
-      // reg1 <- reg2 && reg1 != reg2
-      if(strcmp(var_ref->get_regname(),expr_ref->get_regname()))
-        emit_move(var_ref->get_regname(), expr_ref->get_regname(), s);
-    }
-    else if(TO_OFFSET_PTR(var_ref) != NULL) {
-      // offsetr <- reg
-      OFFSET_PTR var_offset_ref = TO_OFFSET_PTR(var_ref);
-      emit_store(expr_ref->get_regname(), var_offset_ref->get_offset(), var_offset_ref->get_regname(), s);
+  if(dynamic_cast<RegisterRef *>(var_ref) != NULL) {
+    // reg1 <- reg2
+    if(strcmp(expr_ref->get_regname(),var_ref->get_regname())) {
+      emit_move(var_ref->get_regname(), expr_ref->get_regname(), s);
     }
   }
-  else if(TO_OFFSET_PTR(expr_ref) != NULL) {
-    OFFSET_PTR expr_offset_ref = TO_OFFSET_PTR(expr_ref);
-    if(TO_REG_PTR(var_ref) != NULL) {
-      // reg <- offset
-      emit_load(var_ref->get_regname(), expr_offset_ref->get_offset(), expr_offset_ref->get_regname(), s);
-    }
-    else if(TO_OFFSET_PTR(var_ref) != NULL) {
-      OFFSET_PTR var_offset_ref = TO_OFFSET_PTR(var_ref);
-      // offset1 <- offset2
-      emit_load(ACC, expr_offset_ref->get_offset(), expr_offset_ref->get_regname(), s);
-      emit_store(ACC, var_offset_ref->get_offset(), var_offset_ref->get_regname(), s);
-    }
+  else if(dynamic_cast<OffsetRef *>(var_ref) != NULL) {
+    // offset <- reg
+    OffsetRef * var_offset_ref = dynamic_cast<OffsetRef *>(var_ref);
+    emit_store(expr_ref->get_regname(), var_offset_ref->get_offset(), var_offset_ref->get_regname(), s);
   }
-  return var_ref;
+  return expr_ref; // we cannot return var_ref or the smart pointer wrapper of it since it's a pointer
 }
 
 REF_PTR static_dispatch_class::code(ostream &s) {
@@ -1236,11 +1221,7 @@ REF_PTR divide_class::code(ostream &s) {
 }
 
 REF_PTR neg_class::code(ostream &s) {
-  REF_PTR e1_ref = e1->code(s);
-  if(TO_OFFSET_PTR(e1_ref) != NULL) {
-    OFFSET_PTR offset_ref = TO_OFFSET_PTR(e1_ref);
-    emit_load(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
-  }
+  REG_PTR e1_ref = TO_REG_PTR(e1->code(s));
   emit_jal("Object.copy", s);
   emit_load(T1, 3, ACC, s);
   emit_neg(T1, T1, s);
@@ -1333,11 +1314,11 @@ REF_PTR no_expr_class::code(ostream &s) {
 
 REF_PTR object_class::code(ostream &s) {
   // it's a little bit strange for using both smart pointer and pointer, but I don't want to modify framework code of this assignment.
-  REF_PTR object_ref(env.lookup(name));
+  Reference *object_ref = env.lookup(name);
   REF_PTR ref = env.get_new_temporary();
 
-  if(TO_OFFSET_PTR(object_ref) != NULL) {
-    OFFSET_PTR object_offset_ref = TO_OFFSET_PTR(object_ref);
+  if(dynamic_cast<OffsetRef *>(object_ref) != NULL) {
+    OffsetRef* object_offset_ref = dynamic_cast<OffsetRef *>(object_ref);
     if(TO_REG_PTR(ref) != NULL) {
       REG_PTR reg_ref = TO_REG_PTR(ref);
       emit_load(reg_ref->get_regname(), object_offset_ref->get_offset(), object_offset_ref->get_regname(), s);
