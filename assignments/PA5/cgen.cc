@@ -26,6 +26,7 @@
 #include "cgen_gc.h"
 #include "cool-tree.h"
 #include "cool-tree.handcode.h"
+#include <cstdio>
 #include <cstring>
 #include <memory>
 #include <ostream>
@@ -1152,7 +1153,7 @@ REF_PTR assign_class::code(ostream &s) {
 }
 
 REF_PTR static_dispatch_class::code(ostream &s) {
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 // TODO
@@ -1162,27 +1163,27 @@ REF_PTR dispatch_class::code(ostream &s) {
   // if it is void, we need to report error
   // if it is nonvoid, we need to get the method in dispatch table and call it
 
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR cond_class::code(ostream &s) {
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR loop_class::code(ostream &s) {
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR typcase_class::code(ostream &s) {
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR block_class::code(ostream &s) {
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR let_class::code(ostream &s) {
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR arith(Expression e1,Expression e2, char *op,ostream &s) {
@@ -1193,7 +1194,7 @@ REF_PTR arith(Expression e1,Expression e2, char *op,ostream &s) {
   if(TO_OFFSET_PTR(e1_ref) != NULL) {
     OFFSET_PTR e1_offset_ref = TO_OFFSET_PTR(e1_ref);
     emit_load(T1, e1_offset_ref->get_offset(), e1_offset_ref->get_regname(), s);
-    e1_ref.reset(new RegisterRef(T1));
+    e1_ref = MAKE_REG_PTR(REMOVE_CONST(T1));
   }
   emit_load(T2, 3, ACC, s);
   emit_load(T1, 3, e1_ref->get_regname(), s);
@@ -1201,7 +1202,7 @@ REF_PTR arith(Expression e1,Expression e2, char *op,ostream &s) {
   emit_binop(op, T1, T1, T2, s);
   emit_store(T1, 3, ACC, s);
   env.back_temporaries_index(1); 
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR plus_class::code(ostream &s) {
@@ -1226,23 +1227,23 @@ REF_PTR neg_class::code(ostream &s) {
   emit_load(T1, 3, ACC, s);
   emit_neg(T1, T1, s);
   emit_store(T1, 3, ACC, s);
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR lt_class::code(ostream &s) {
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR eq_class::code(ostream &s) {
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR leq_class::code(ostream &s) {
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR comp_class::code(ostream &s) {
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR int_const_class::code(ostream& s)  
@@ -1278,7 +1279,7 @@ REF_PTR string_const_class::code(ostream& s)
     emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
     return offset_ref;
   }
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR bool_const_class::code(ostream& s)
@@ -1297,7 +1298,7 @@ REF_PTR bool_const_class::code(ostream& s)
     emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
     return offset_ref;
   }
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR new__class::code(ostream &s) {
@@ -1307,15 +1308,15 @@ REF_PTR new__class::code(ostream &s) {
   RESET_ADDRESS(type_name, CLASSINIT_SUFFIX);
   emit_jal(address.get(), s);
 
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR isvoid_class::code(ostream &s) {
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR no_expr_class::code(ostream &s) {
-  return REF_PTR(new RegisterRef(ACC));
+  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
 REF_PTR object_class::code(ostream &s) {
@@ -1339,7 +1340,7 @@ REF_PTR object_class::code(ostream &s) {
   }
   else if(dynamic_cast<RegisterRef *>(object_ref) != NULL) {
     emit_move(ACC, object_ref->get_regname(), s);
-    return REG_PTR(new RegisterRef(ACC)); // cannot returning smart pointer wrapper of object_ref since it might cause uaf.(mix using of smart pointer and pointer is so ugly...)
+    return MAKE_REG_PTR(REMOVE_CONST(ACC)); // cannot returning smart pointer wrapper of object_ref since it might cause uaf.(mix using of smart pointer and pointer is so ugly...)
   }
 }
 
@@ -1519,15 +1520,15 @@ void Environment::set_temp_num(int n) {
   for(i = 0;i < SAVE_REG_COUNT && i < n;i++)
   {
     if(n <= SAVE_REG_COUNT)
-      temporaries.push_back(REG_PTR(new RegisterRef(save_regs[n - 1 - i])));
+      temporaries.push_back(MAKE_REG_PTR(REMOVE_CONST(save_regs[n - 1 - i])));
     else
-      temporaries.push_back(REG_PTR(new RegisterRef(save_regs[SAVE_REG_COUNT - 1 - i])));
+      temporaries.push_back(MAKE_REG_PTR(REMOVE_CONST(save_regs[SAVE_REG_COUNT - 1 - i])));
   }
   for(;i < n;i++)
   {
-    temporaries.push_back(OFFSET_PTR(new OffsetRef(FP,i - SAVE_REG_COUNT)));
+    temporaries.push_back(MAKE_OFFSET_PTR(REMOVE_CONST(FP),i - SAVE_REG_COUNT));
   }
-  temporaries.push_back(REG_PTR(new RegisterRef(ACC)));
+  temporaries.push_back(MAKE_REG_PTR(REMOVE_CONST(ACC)));
   temporaries_index = 0;
 }
 

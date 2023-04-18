@@ -12,12 +12,18 @@
 
 using std::shared_ptr;
 using std::dynamic_pointer_cast;
+using std::make_shared;
 
 #define REF_PTR shared_ptr<Reference>
 #define REG_PTR shared_ptr<RegisterRef>
 #define OFFSET_PTR shared_ptr<OffsetRef>
+#define MAKE_REF_PTR make_shared<Reference>
+#define MAKE_REG_PTR make_shared<RegisterRef>
+#define MAKE_OFFSET_PTR make_shared<OffsetRef>
 #define TO_REG_PTR dynamic_pointer_cast<RegisterRef>
 #define TO_OFFSET_PTR dynamic_pointer_cast<OffsetRef> 
+#define REMOVE_CONST const_cast<char *>
+
 
 enum Basicness     {Basic, NotBasic};
 #define TRUE 1
