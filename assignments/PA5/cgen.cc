@@ -1135,7 +1135,7 @@ void method_class::restore_stack_frame(ostream &stream) {
 
 REF_PTR assign_class::code(ostream &s) {
   Reference *var_ref = env.lookup(name);
-  REG_PTR expr_ref = TO_REG_PTR(expr->code(s)); //should always be reference of ACC
+  REG_PTR expr_ref = TO_REG_PTR(expr->code(s)); //should always be a RegisterRef
 
   if(dynamic_cast<RegisterRef *>(var_ref) != NULL) {
     // reg1 <- reg2
@@ -1148,7 +1148,7 @@ REF_PTR assign_class::code(ostream &s) {
     OffsetRef * var_offset_ref = dynamic_cast<OffsetRef *>(var_ref);
     emit_store(expr_ref->get_regname(), var_offset_ref->get_offset(), var_offset_ref->get_regname(), s);
   }
-  return expr_ref; // we cannot return var_ref or the smart pointer wrapper of it since it's a pointer
+  return expr_ref; // we cannot return the smart pointer wrapper of var_ref since it might cause uaf
 }
 
 REF_PTR static_dispatch_class::code(ostream &s) {
@@ -1157,6 +1157,11 @@ REF_PTR static_dispatch_class::code(ostream &s) {
 
 // TODO
 REF_PTR dispatch_class::code(ostream &s) {
+  // put arguments in stack
+  // get self and check whether it is void
+  // if it is void, we need to report error
+  // if it is nonvoid, we need to get the method in dispatch table and call it
+
   return REF_PTR(new RegisterRef(ACC));
 }
 
@@ -1182,7 +1187,7 @@ REF_PTR let_class::code(ostream &s) {
 
 REF_PTR arith(Expression e1,Expression e2, char *op,ostream &s) {
   REF_PTR e1_ref = e1->code(s);
-  e2->code(s); // reference of e2 should always be ACC(I think)
+  REG_PTR e2_ref = TO_REG_PTR(e2->code(s)); // should always be a RegisterRef
   emit_jal("Object.copy", s);
   // if e1_ref is not a RegisterRef, we need to load it into T1
   if(TO_OFFSET_PTR(e1_ref) != NULL) {
@@ -1332,7 +1337,10 @@ REF_PTR object_class::code(ostream &s) {
       return offset_ref;
     }
   }
-  // TODO: only consider object which is an attribute or parameter now
+  else if(dynamic_cast<RegisterRef *>(object_ref) != NULL) {
+    emit_move(ACC, object_ref->get_regname(), s);
+    return REG_PTR(new RegisterRef(ACC)); // cannot returning smart pointer wrapper of object_ref since it might cause uaf.(mix using of smart pointer and pointer is so ugly...)
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////
