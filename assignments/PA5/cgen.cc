@@ -1161,6 +1161,7 @@ REF_PTR static_dispatch_class::code(ostream &s) {
   return REF_PTR(new RegisterRef(ACC));
 }
 
+// TODO
 REF_PTR dispatch_class::code(ostream &s) {
   return REF_PTR(new RegisterRef(ACC));
 }
@@ -1301,6 +1302,15 @@ REF_PTR bool_const_class::code(ostream& s)
 }
 
 REF_PTR new__class::code(ostream &s) {
+  std::unique_ptr<char []> address(new char[type_name->get_len() + strlen(PROTOBJ_SUFFIX) + 1]);
+  strcpy(address.get(), type_name->get_string());
+  strcpy(address.get() + type_name->get_len(), PROTOBJ_SUFFIX);
+  emit_load_address(ACC, address.get(), s);
+  emit_jal("Object.copy", s);
+  address.reset(new char[type_name->get_len() + strlen(CLASSINIT_SUFFIX) + 1]);
+  strcpy(address.get(), type_name->get_string());
+  strcpy(address.get() + type_name->get_len(), CLASSINIT_SUFFIX);
+  emit_jal(address.get(), s);
   return REF_PTR(new RegisterRef(ACC));
 }
 
