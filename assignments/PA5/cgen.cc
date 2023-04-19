@@ -28,9 +28,12 @@
 #include "cool-tree.handcode.h"
 #include <cstdio>
 #include <cstring>
+#include <iterator>
+#include <map>
 #include <memory>
 #include <ostream>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 extern void emit_string_constant(ostream& str, char *s);
@@ -119,6 +122,7 @@ static char *gc_collect_names[] =
   { "_NoGC_Collect", "_GenGC_Collect", "_ScnGC_Collect" };
 
 static int tag = 0;
+static int label = 0;
 static Environment env = Environment();
 
 //  BoolConst is a class that implements code generation for operations
@@ -943,14 +947,14 @@ void CgenNode::get_attrs(std::vector<attr_class *> &attrs, bool inherit)
   }
 }
 
-void CgenNode::get_methods(std::vector<std::string> &methods)
+void CgenNode::get_methods(std::list<std::pair<CgenNodeP,method_class *>> &methods)
 {
   if(parentnd)
     parentnd->get_methods(methods);
   for(int i = features->first(); features->more(i); i = features->next(i)) {
     method_class* m = dynamic_cast<method_class *>(features->nth(i));
     if(m != NULL)
-      methods.push_back(std::string(name->get_string()) + "." + std::string(m->name->get_string()));
+      methods.push_back(std::pair<CgenNodeP,method_class *>(this,m));
   }
 }
 
@@ -994,10 +998,21 @@ void CgenNode::code_def(ostream& s)
 void CgenNode::code_dispTab(ostream& s)
 {
   emit_disptable_ref(name,s);  s << LABEL;
-  std::vector<std::string> methods;
+  std::list<std::pair<CgenNodeP,method_class *>> methods;
   get_methods(methods);
+  // Remove superclass methods overridden by subclasses
+  std::unordered_set<Symbol>method_names;
+  for(auto it = methods.rbegin();it != methods.rend();) {
+    if(method_names.find(it->second->name) == method_names.end()) {
+      method_names.insert(it->second->name);
+      it++;
+    }
+    else
+      it = std::list<std::pair<CgenNodeP,method_class *>>::reverse_iterator(methods.erase(--it.base()));
+  }
+
   for(auto it = methods.begin();it != methods.end();it++) {
-    s << WORD << *it << endl;
+      s << WORD << it->first->name << "." << it->second->name << endl;
   }
 }
 
@@ -1156,12 +1171,23 @@ REF_PTR static_dispatch_class::code(ostream &s) {
   return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
-// TODO
 REF_PTR dispatch_class::code(ostream &s) {
   // put arguments in stack
-  // get self and check whether it is void
+  for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
+    REG_PTR actual_ref = TO_REG_PTR(actual->nth(i)->code(s));
+    emit_store(actual_ref->get_regname(), 0, SP, s);
+    emit_addiu(SP, SP, -4, s);
+  }
+  // get object and check whether it is void
+  REG_PTR object_ref = TO_REG_PTR(expr->code(s));
+  emit_bne(object_ref->get_regname(), ZERO, label, s);
   // if it is void, we need to report error
+  emit_load_string(ACC, stringtable.lookup(0), s); // load filename
+  emit_load_imm(T1, line_number, s);
+  emit_jal("_dispatch_abort", s);
   // if it is nonvoid, we need to get the method in dispatch table and call it
+  emit_label_def(label++, s);
+  // TODO
 
   return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
@@ -1186,7 +1212,7 @@ REF_PTR let_class::code(ostream &s) {
   return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
-REF_PTR arith(Expression e1,Expression e2, char *op,ostream &s) {
+static REF_PTR arith(Expression e1,Expression e2, char *op,ostream &s) {
   REF_PTR e1_ref = e1->code(s);
   REG_PTR e2_ref = TO_REG_PTR(e2->code(s)); // should always be a RegisterRef
   emit_jal("Object.copy", s);
@@ -1335,7 +1361,8 @@ REF_PTR object_class::code(ostream &s) {
       OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
       emit_load(ACC, object_offset_ref->get_offset(), object_offset_ref->get_regname(), s);
       emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
-      return offset_ref;
+      // This is only possible as an anonymous temporary variable, such as the temporary variable storing the first expression in addition
+      return offset_ref; 
     }
   }
   else if(dynamic_cast<RegisterRef *>(object_ref) != NULL) {
@@ -1350,7 +1377,7 @@ REF_PTR object_class::code(ostream &s) {
 //
 ///////////////////////////////////////////////////////////////////////
 
-int binary_op_temp(Expression e1,Expression e2)
+static int binary_op_temp(Expression e1,Expression e2)
 {
   int e1_temp_num = e1->get_temp_num();
   int e2_temp_num = e2->get_temp_num();
@@ -1537,8 +1564,5 @@ void Environment::clear_temporaries() {
 }
 
 REF_PTR Environment::get_new_temporary() {
-  if(next_varibales.empty())
-    return temporaries[temporaries_index++];
-  else 
-    return next_varibales.top();
+  return temporaries[temporaries_index++];
 }

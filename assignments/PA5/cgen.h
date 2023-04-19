@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <vector>
 #include <deque>
-#include <stack>
+#include <list>
+#include <unordered_set>
 #include <string>
 #include <memory>
 #include "emit.h"
@@ -94,7 +95,7 @@ public:
    int basic() { return (basic_status == Basic); }
    void code_def(ostream& s);
    void get_attrs(std::vector<attr_class *> &attrs, bool inherit);
-   void get_methods(std::vector<std::string>&methods);
+   void get_methods(std::list<std::pair<CgenNodeP,method_class *>> &methods);
    void get_methods(std::vector<method_class *>&methods,bool inherit);
    void code_dispTab(ostream& s);
    void code_init(ostream& s);
@@ -145,7 +146,6 @@ class Environment : public SymbolTable<Symbol, Reference>
       int temp_num = 0;
       int param_num = 0;
       std::vector<shared_ptr<Reference>> temporaries;
-      std::stack<shared_ptr<Reference>> next_varibales;
       int temporaries_index = 0;
    public:
       void set_temp_num(int n);
