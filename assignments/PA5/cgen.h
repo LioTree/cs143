@@ -4,8 +4,10 @@
 #include <vector>
 #include <deque>
 #include <list>
+#include <map>
 #include <unordered_set>
 #include <string>
+#include <algorithm>
 #include <memory>
 #include "emit.h"
 #include "cool-tree.h"
@@ -143,6 +145,7 @@ class OffsetRef : public Reference
 class Environment : public SymbolTable<Symbol, Reference>
 {
    private:
+      std::map<Symbol,std::vector<Symbol>> disptable;
       int temp_num = 0;
       int param_num = 0;
       std::vector<shared_ptr<Reference>> temporaries;
@@ -152,8 +155,9 @@ class Environment : public SymbolTable<Symbol, Reference>
       int get_temp_num() { return temp_num; }
       void set_param_num(int n) { param_num = n; }
       int get_param_num() { return param_num; }
-      void forward_temporaries_index(int n) { temporaries_index += n; }
       void back_temporaries_index(int n) { temporaries_index -= n; }
-      shared_ptr<Reference> get_new_temporary();
-      void clear_temporaries();
+      REF_PTR get_new_temporary();
+      void clear_temporaries() { std::vector<REF_PTR>().swap(temporaries); }
+      void insert_disptable(Symbol classname, Symbol methodname);
+      int lookup_disptable(Symbol classname,Symbol methodname);
 };

@@ -1011,6 +1011,10 @@ void CgenNode::code_dispTab(ostream& s)
       it = std::list<std::pair<CgenNodeP,method_class *>>::reverse_iterator(methods.erase(--it.base()));
   }
 
+  // put methods in env
+  for(auto it = methods.begin();it != methods.end();it++)
+    env.insert_disptable(name, it->second->name);
+
   for(auto it = methods.begin();it != methods.end();it++) {
       s << WORD << it->first->name << "." << it->second->name << endl;
   }
@@ -1187,8 +1191,9 @@ REF_PTR dispatch_class::code(ostream &s) {
   emit_jal("_dispatch_abort", s);
   // if it is nonvoid, we need to get the method in dispatch table and call it
   emit_label_def(label++, s);
-  // TODO
-
+  emit_load(T1, 2, ACC, s);
+  emit_load(T1,env.lookup_disptable(expr->type, name),T1,s);
+  emit_jalr(T1, s);
   return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
@@ -1559,10 +1564,18 @@ void Environment::set_temp_num(int n) {
   temporaries_index = 0;
 }
 
-void Environment::clear_temporaries() {
-  std::vector<REF_PTR>().swap(temporaries);
+REF_PTR Environment::get_new_temporary() {
+  return temporaries_index < temp_num ? temporaries[temporaries_index++] : temporaries[temporaries_index];
 }
 
-REF_PTR Environment::get_new_temporary() {
-  return temporaries[temporaries_index++];
+void Environment::insert_disptable(Symbol classname, Symbol methodname) {
+  if(disptable.find(classname) == disptable.end()) {
+    disptable[classname] = std::vector<Symbol>();
+  }
+  disptable[classname].push_back(methodname);
+}
+
+int Environment::lookup_disptable(Symbol classname,Symbol methodname) {
+  auto it = std::find(disptable[classname].begin(),disptable[classname].end(),methodname);
+  return std::distance(disptable[classname].begin(), it);
 }
