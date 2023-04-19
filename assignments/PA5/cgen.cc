@@ -1172,6 +1172,25 @@ REF_PTR assign_class::code(ostream &s) {
 }
 
 REF_PTR static_dispatch_class::code(ostream &s) {
+  // put arguments in stack
+  for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
+    REG_PTR actual_ref = TO_REG_PTR(actual->nth(i)->code(s));
+    emit_store(actual_ref->get_regname(), 0, SP, s);
+    emit_addiu(SP, SP, -4, s);
+  }
+  // get object and check whether it is void
+  REG_PTR object_ref = TO_REG_PTR(expr->code(s));
+  emit_bne(object_ref->get_regname(), ZERO, label, s);
+  // if it is void, we need to report error
+  emit_load_string(ACC, stringtable.lookup(0), s); // load filename
+  emit_load_imm(T1, line_number, s);
+  emit_jal("_dispatch_abort", s);
+  // if it is nonvoid, we need to get the method in dispatch table and call it
+  emit_label_def(label++, s);
+  BUILD_ADDRESS(type_name, DISPTAB_SUFFIX);
+  emit_load_address(T1, address.get(), s);
+  emit_load(T1,env.lookup_disptable(expr->type, name),T1,s);
+  emit_jalr(T1, s);
   return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
