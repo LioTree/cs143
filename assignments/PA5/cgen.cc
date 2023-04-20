@@ -1111,7 +1111,6 @@ void CgenNode::code_methods(ostream& s)
     // generate codes of expr
     (*it)->expr->code(s);
     // generate codes which restore stack frame
-    env.set_temp_num(temp_num); // considering the situation of the block, we need to restore temp_num
     (*it)->restore_stack_frame(s);
     env.exitscope();
     // env.clear_temporaries();
@@ -1232,9 +1231,10 @@ REF_PTR typcase_class::code(ostream &s) {
 REF_PTR block_class::code(ostream &s) {
   // traverse body and call every element's code method
   for(int i = body->first(); body->more(i); i = body->next(i)) {
-    env.set_temp_num(body->nth(i)->get_temp_num());
+    int distance = get_temp_num() - body->nth(i)->get_temp_num();
+    env.forward_temporaries_index(distance);
     body->nth(i)->code(s);
-    // env.clear_temporaries();
+    env.back_temporaries_index(distance);
   }
   return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
