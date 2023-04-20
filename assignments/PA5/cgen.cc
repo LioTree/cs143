@@ -1325,55 +1325,49 @@ void leq_class::code(ostream &s,REF_PTR target) {
 void comp_class::code(ostream &s,REF_PTR target) {
 }
 
-//FIXME
 void int_const_class::code(ostream &s,REF_PTR target)  
 {
   //
   // Need to be sure we have an IntEntry *, not an arbitrary Symbol
   //
-  REF_PTR ref = env.get_new_temporary();
-  if(TO_REG_PTR(ref) != NULL) {
-    REG_PTR reg_ref = TO_REG_PTR(ref);
-    emit_load_int(reg_ref->get_regname(),inttable.lookup_string(token->get_string()),s);
+  if(TO_REG_PTR(target) != NULL) {
+    REG_PTR reg_target = TO_REG_PTR(target);
+    emit_load_int(reg_target->get_regname(),inttable.lookup_string(token->get_string()),s);
   }
-  else if(TO_OFFSET_PTR(ref) != NULL) {
-    OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
+  else if(TO_OFFSET_PTR(target) != NULL) {
+    OFFSET_PTR offset_target = TO_OFFSET_PTR(target);
     emit_load_int(ACC,inttable.lookup_string(token->get_string()),s);
-    emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
+    emit_store(ACC, offset_target->get_offset(), offset_target->get_regname(), s);
   }
 }
 
-//FIXME
 void string_const_class::code(ostream &s,REF_PTR target)
 {
-  REF_PTR ref = env.get_new_temporary();
-  if(TO_REG_PTR(ref) != NULL) {
-    REG_PTR reg_ref = TO_REG_PTR(ref);
-    emit_load_string(reg_ref->get_regname(),stringtable.lookup_string(token->get_string()),s);
+  if(TO_REG_PTR(target) != NULL) {
+    REG_PTR reg_target = TO_REG_PTR(target);
+    emit_load_string(reg_target->get_regname(),stringtable.lookup_string(token->get_string()),s);
   }
-  else if(TO_OFFSET_PTR(ref) != NULL) {
-    OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
+  else if(TO_OFFSET_PTR(target) != NULL) {
+    OFFSET_PTR offset_target = TO_OFFSET_PTR(target);
     emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
-    emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
+    emit_store(ACC, offset_target->get_offset(), offset_target->get_regname(), s);
   }
 }
 
-//FIXME
-void bool_const_class::code(ostream &s,REF_PTR target)
+
+void bool_const_class::code(ostream &s, REF_PTR target)
 {
-  emit_load_bool(ACC, BoolConst(val), s);
-
-  REF_PTR ref = env.get_new_temporary();
-  if(TO_REG_PTR(ref) != NULL) {
-    REG_PTR reg_ref = TO_REG_PTR(ref);
-    emit_load_bool(reg_ref->get_regname(),BoolConst(val),s);
+  if (TO_REG_PTR(target) != NULL) {
+    REG_PTR reg_target = TO_REG_PTR(target);
+    emit_load_bool(reg_target->get_regname(), BoolConst(val), s);
   }
-  else if(TO_OFFSET_PTR(ref) != NULL) {
-    OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
-    emit_load_bool(ACC,BoolConst(val),s);
-    emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
+  else if (TO_OFFSET_PTR(target) != NULL) {
+    OFFSET_PTR offset_target = TO_OFFSET_PTR(target);
+    emit_load_bool(ACC, BoolConst(val), s);
+    emit_store(ACC, offset_target->get_offset(), offset_target->get_regname(), s);
   }
 }
+
 
 //FIXME
 void new__class::code(ostream &s,REF_PTR target) {
@@ -1396,23 +1390,23 @@ void object_class::code(ostream &s,REF_PTR target) {
   if(dynamic_cast<OffsetRef *>(object_ref) != NULL) {
     OffsetRef* object_offset_ref = dynamic_cast<OffsetRef *>(object_ref);
     if(TO_REG_PTR(target) != NULL) {
-      REG_PTR target_reg = TO_REG_PTR(target);
-      emit_load(target_reg->get_regname(), object_offset_ref->get_offset(), object_offset_ref->get_regname(), s);
+      REG_PTR reg_target = TO_REG_PTR(target);
+      emit_load(reg_target->get_regname(), object_offset_ref->get_offset(), object_offset_ref->get_regname(), s);
     }
     else if(TO_OFFSET_PTR(target) != NULL) {
-      OFFSET_PTR target_offset = TO_OFFSET_PTR(target);
+      OFFSET_PTR offset_target = TO_OFFSET_PTR(target);
       emit_load(ACC, object_offset_ref->get_offset(), object_offset_ref->get_regname(), s);
-      emit_store(ACC, target_offset->get_offset(), target_offset->get_regname(), s);
+      emit_store(ACC, offset_target->get_offset(), offset_target->get_regname(), s);
     }
   }
   else if(dynamic_cast<RegisterRef *>(object_ref) != NULL) {
     if(TO_REG_PTR(target) != NULL) {
-      REG_PTR target_reg = TO_REG_PTR(target);
-      emit_move(target_reg->get_regname(), object_ref->get_regname(), s);
+      REG_PTR reg_target = TO_REG_PTR(target);
+      emit_move(reg_target->get_regname(), object_ref->get_regname(), s);
     }
     else if(TO_OFFSET_PTR(target) != NULL) {
-      OFFSET_PTR target_offset = TO_OFFSET_PTR(target);
-      emit_store(object_ref->get_regname(), target_offset->get_offset(), target_offset->get_regname(), s);
+      OFFSET_PTR offset_target = TO_OFFSET_PTR(target);
+      emit_store(object_ref->get_regname(), offset_target->get_offset(), offset_target->get_regname(), s);
     }
   }
 }
