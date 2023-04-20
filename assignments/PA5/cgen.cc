@@ -1156,7 +1156,6 @@ void method_class::restore_stack_frame(ostream &stream) {
 //
 //*****************************************************************
 
-//FIXME
 void assign_class::code(ostream &s,REF_PTR target) {
   expr->code(s, target);
 }
@@ -1230,27 +1229,22 @@ void block_class::code(ostream &s,REF_PTR target) {
     emit_move(target->get_regname(), ACC, s);
 }
 
-//FIXME
 void let_class::code(ostream &s,REF_PTR target) {
-  /*
   env.enterscope();
-  int distance = env.get_temp_num() - env.get_temporaries_index() - init->get_temp_num();
-  env.forward_temporaries_index(distance);
-  REG_PTR init_ref = TO_REG_PTR(init->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)))); // should always be ACC
-  env.back_temporaries_index(distance);
+  int saved_temporaries_index = env.get_temporaries_index();
   REF_PTR var_ref = env.get_new_temporary();
-  if(TO_REG_PTR(var_ref) != NULL) {
-    emit_move(var_ref->get_regname(), init_ref->get_regname(), s);
+  env.back_temporaries_index(1);
+  init->code(s,var_ref); 
+  if(TO_REG_PTR(var_ref) != NULL)
     env.addid(identifier, new RegisterRef(var_ref->get_regname()));
-  }
-  else if(TO_OFFSET_PTR(var_ref) != NULL) {
-    OFFSET_PTR var_offset_ref = TO_OFFSET_PTR(var_ref);
-    emit_store(init_ref->get_regname(), var_offset_ref->get_offset(), var_offset_ref->get_regname(), s);
-    env.addid(identifier, new OffsetRef(var_offset_ref->get_regname(),var_offset_ref->get_offset()));
-  }
+  else if(TO_OFFSET_PTR(var_ref) != NULL)
+    env.addid(identifier, new OffsetRef(var_ref->get_regname(),TO_OFFSET_PTR(var_ref)->get_offset()));
+  env.set_temporaries_index(saved_temporaries_index);
+  env.forward_temporaries_index(1);
   body->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  if(strcmp(target->get_regname(),ACC) != 0) 
+    emit_move(target->get_regname(), ACC, s);
   env.exitscope();
-  */
 }
 
 static void arith(Expression e1,Expression e2, char *op,ostream &s,REF_PTR target) {
