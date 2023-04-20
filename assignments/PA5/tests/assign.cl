@@ -16,6 +16,7 @@ class Main inherits IO {
          out_string("\n");
          out_int(arith(6));
          out_string("\n");
+         out_int(local());
       }
    };
 
@@ -43,5 +44,8 @@ class Main inherits IO {
     a <- a + 3 * (5 + a)
    };
 
-   (* need tests for local variable *)
+   local():Int {
+      let a:Int <- 3 in a <- 3 + a - a * 4
+   };
+
 };

@@ -277,6 +277,7 @@ Main_dispTab:
 	.word	Main.attr_param
 	.word	Main.nested
 	.word	Main.arith
+	.word	Main.local
 String_dispTab:
 	.word	Object.abort
 	.word	Object.type_name
@@ -617,6 +618,26 @@ label17:
 	lw	$t1 8($a0)
 	lw	$t1 12($t1)
 	jalr		$t1
+	move	$a0 $s0
+	bne	$a0 $zero label18
+	la	$a0 str_const0
+	li	$t1 19
+	jal	_dispatch_abort
+label18:
+	lw	$t1 8($a0)
+	lw	$t1 56($t1)
+	jalr		$t1
+	sw	$a0 0($sp)
+	addiu	$sp $sp -4
+	move	$a0 $s0
+	bne	$a0 $zero label19
+	la	$a0 str_const0
+	li	$t1 19
+	jal	_dispatch_abort
+label19:
+	lw	$t1 8($a0)
+	lw	$t1 16($t1)
+	jalr		$t1
 	lw	$fp 12($sp)
 	lw	$s0 8($sp)
 	lw	$ra 4($sp)
@@ -723,6 +744,45 @@ Main.arith:
 	lw	$s0 20($sp)
 	lw	$ra 16($sp)
 	addiu	$sp $sp 28
+	jr	$ra	
+Main.local:
+	addiu	$sp $sp -24
+	sw	$fp 24($sp)
+	sw	$s0 20($sp)
+	sw	$ra 16($sp)
+	addiu	$fp $sp 4
+	move	$s0 $a0
+	sw	$s1 8($fp)
+	sw	$s2 4($fp)
+	sw	$s3 0($fp)
+	la	$s3 int_const0
+	la	$s2 int_const0
+	move	$a0 $s3
+	jal	Object.copy
+	lw	$t2 12($a0)
+	lw	$t1 12($s2)
+	add	$t1 $t1 $t2
+	sw	$t1 12($a0)
+	move	$s2 $a0
+	move	$s1 $s3
+	la	$a0 int_const1
+	jal	Object.copy
+	lw	$t2 12($a0)
+	lw	$t1 12($s1)
+	mul	$t1 $t1 $t2
+	sw	$t1 12($a0)
+	jal	Object.copy
+	lw	$t2 12($a0)
+	lw	$t1 12($s2)
+	sub	$t1 $t1 $t2
+	sw	$t1 12($a0)
+	lw	$s1 8($fp)
+	lw	$s2 4($fp)
+	lw	$s3 0($fp)
+	lw	$fp 24($sp)
+	lw	$s0 20($sp)
+	lw	$ra 16($sp)
+	addiu	$sp $sp 24
 	jr	$ra	
 
 # end of generated code
