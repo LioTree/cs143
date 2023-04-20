@@ -1158,22 +1158,7 @@ void method_class::restore_stack_frame(ostream &stream) {
 
 //FIXME
 void assign_class::code(ostream &s,REF_PTR target) {
-  /*
-  Reference *var_ref = env.lookup(name);
-  REG_PTR expr_ref = TO_REG_PTR(expr->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)))); //should always be a RegisterRef
-
-  if(dynamic_cast<RegisterRef *>(var_ref) != NULL) {
-    // reg1 <- reg2
-    if(strcmp(expr_ref->get_regname(),var_ref->get_regname())) {
-      emit_move(var_ref->get_regname(), expr_ref->get_regname(), s);
-    }
-  }
-  else if(dynamic_cast<OffsetRef *>(var_ref) != NULL) {
-    // offset <- reg
-    OffsetRef * var_offset_ref = dynamic_cast<OffsetRef *>(var_ref);
-    emit_store(expr_ref->get_regname(), var_offset_ref->get_offset(), var_offset_ref->get_regname(), s);
-  }
-  */
+  expr->code(s, target);
 }
 
 void static_dispatch_class::code(ostream &s,REF_PTR target) {

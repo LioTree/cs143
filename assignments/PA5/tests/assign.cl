@@ -1,9 +1,22 @@
-class Main {
+class Main inherits IO {
    c:Int <- 3;
    d:Int <- 4;
 
    main(): Object {
-    1
+      {
+         out_int(param_param(1,2));
+         out_string("\n");
+         out_int(param_attr(3));
+         out_string("\n");
+         out_int(attr_attr());
+         out_string("\n");
+         out_int(attr_param(4));
+         out_string("\n");
+         out_int(nested(5));
+         out_string("\n");
+         out_int(arith(6));
+         out_string("\n");
+      }
    };
 
    param_param(a:Int,b:Int):Int {
