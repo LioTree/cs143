@@ -150,6 +150,7 @@ class Environment : public SymbolTable<Symbol, Reference>
       int param_num = 0;
       std::vector<shared_ptr<Reference>> temporaries;
       int temporaries_index = 0;
+      Symbol self_type;
    public:
       void set_temp_num(int n);
       int get_temp_num() { return temp_num; }
@@ -163,4 +164,6 @@ class Environment : public SymbolTable<Symbol, Reference>
       void clear_temporaries() { std::vector<REF_PTR>().swap(temporaries); temporaries_index = 0; }
       void insert_disptable(Symbol classname, Symbol methodname);
       int lookup_disptable(Symbol classname,Symbol methodname);
+      void set_self_type(Symbol s) { self_type = s; }
+      Symbol get_self_type() { return self_type; }
 };

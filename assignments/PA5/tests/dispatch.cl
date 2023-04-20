@@ -1,7 +1,10 @@
 class Main {
    o:A <- new B;
    main(): Object {
-    1
+      {
+         dispatch();
+         static_dispatch();
+      }
    };
 
    dispatch():Object {

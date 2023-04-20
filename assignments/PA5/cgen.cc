@@ -597,7 +597,8 @@ void CgenClassTable::code_methods()
 {
   for(List<CgenNode> *l = nds; l; l = l->tl()) {
     CgenNodeP node = l->hd();
-    node->code_methods(str);
+    if(!node->basic())
+      node->code_methods(str);
   }
 }
 
@@ -1080,6 +1081,7 @@ void CgenNode::code_init(ostream &s)
 void CgenNode::code_methods(ostream& s)
 {
   env.enterscope();
+  env.set_self_type(name);
   // record offset of attributes in this class
   std::vector<attr_class *> attrs;
   get_attrs(attrs,true);
@@ -1089,6 +1091,7 @@ void CgenNode::code_methods(ostream& s)
     env.addid((*it)->name, ref);
     index++;
   }
+  env.addid(self, new RegisterRef(SELF));
   std::vector<method_class *> methods;
   get_methods(methods,false);
   // deal with each method
@@ -1191,7 +1194,7 @@ void static_dispatch_class::code(ostream &s,REF_PTR target) {
   emit_label_def(label++, s);
   BUILD_ADDRESS(type_name, DISPTAB_SUFFIX);
   emit_load_address(T1, address.get(), s);
-  emit_load(T1,env.lookup_disptable(expr->type, name),T1,s);
+  emit_load(T1,env.lookup_disptable(type_name, name),T1,s);
   emit_jalr(T1, s);
   if(strcmp(target->get_regname(),ACC) != 0) {
     emit_move(target->get_regname(), ACC, s);
@@ -1215,11 +1218,10 @@ void dispatch_class::code(ostream &s,REF_PTR target) {
   // if it is nonvoid, we need to get the method in dispatch table and call it
   emit_label_def(label++, s);
   emit_load(T1, 2, ACC, s);
-  emit_load(T1,env.lookup_disptable(expr->type, name),T1,s);
+  emit_load(T1,env.lookup_disptable(expr->type == SELF_TYPE ? env.get_self_type() : expr->type, name),T1,s);
   emit_jalr(T1, s);
-  if(strcmp(target->get_regname(),ACC) != 0) {
+  if(strcmp(target->get_regname(),ACC) != 0) 
     emit_move(target->get_regname(), ACC, s);
-  }
 }
 
 void cond_class::code(ostream &s,REF_PTR target) {
@@ -1239,9 +1241,8 @@ void block_class::code(ostream &s,REF_PTR target) {
     body->nth(i)->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
     env.back_temporaries_index(distance);
   }
-  if(strcmp(target->get_regname(),ACC) != 0) {
+  if(strcmp(target->get_regname(),ACC) != 0) 
     emit_move(target->get_regname(), ACC, s);
-  }
 }
 
 //FIXME
@@ -1286,9 +1287,8 @@ static void arith(Expression e1,Expression e2, char *op,ostream &s,REF_PTR targe
   // emit_add(T1, T1, T2, s);
   emit_binop(op, T1, T1, T2, s);
   emit_store(T1, 3, ACC, s);
-  if(strcmp(target->get_regname(),ACC) != 0) {
+  if(strcmp(target->get_regname(),ACC) != 0) 
     emit_move(target->get_regname(), ACC, s);
-  }
 }
 
 void plus_class::code(ostream &s,REF_PTR target) {
@@ -1379,6 +1379,8 @@ void new__class::code(ostream &s,REF_PTR target) {
   emit_jal("Object.copy", s);
   RESET_ADDRESS(type_name, CLASSINIT_SUFFIX);
   emit_jal(address.get(), s);
+  if(strcmp(target->get_regname(), ACC))
+    emit_move(target->get_regname(), ACC, s);
 }
 
 void isvoid_class::code(ostream &s,REF_PTR target) {
