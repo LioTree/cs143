@@ -1193,6 +1193,9 @@ void static_dispatch_class::code(ostream &s,REF_PTR target) {
   emit_load_address(T1, address.get(), s);
   emit_load(T1,env.lookup_disptable(expr->type, name),T1,s);
   emit_jalr(T1, s);
+  if(strcmp(target->get_regname(),ACC) != 0) {
+    emit_move(target->get_regname(), ACC, s);
+  }
 }
 
 void dispatch_class::code(ostream &s,REF_PTR target) {
@@ -1214,6 +1217,9 @@ void dispatch_class::code(ostream &s,REF_PTR target) {
   emit_load(T1, 2, ACC, s);
   emit_load(T1,env.lookup_disptable(expr->type, name),T1,s);
   emit_jalr(T1, s);
+  if(strcmp(target->get_regname(),ACC) != 0) {
+    emit_move(target->get_regname(), ACC, s);
+  }
 }
 
 void cond_class::code(ostream &s,REF_PTR target) {
@@ -1225,7 +1231,6 @@ void loop_class::code(ostream &s,REF_PTR target) {
 void typcase_class::code(ostream &s,REF_PTR target) {
 }
 
-//FIXME
 void block_class::code(ostream &s,REF_PTR target) {
   // traverse body and call every element's code method
   for(int i = body->first(); body->more(i); i = body->next(i)) {
@@ -1233,6 +1238,9 @@ void block_class::code(ostream &s,REF_PTR target) {
     env.forward_temporaries_index(distance);
     body->nth(i)->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
     env.back_temporaries_index(distance);
+  }
+  if(strcmp(target->get_regname(),ACC) != 0) {
+    emit_move(target->get_regname(), ACC, s);
   }
 }
 
@@ -1299,15 +1307,14 @@ void divide_class::code(ostream &s,REF_PTR target) {
   arith(e1,e2,DIV,s,target); 
 }
 
-//FIXME
 void neg_class::code(ostream &s,REF_PTR target) {
-  /*
-  REG_PTR e1_ref = TO_REG_PTR(e1->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC))));
+  e1->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
   emit_jal("Object.copy", s);
   emit_load(T1, 3, ACC, s);
   emit_neg(T1, T1, s);
   emit_store(T1, 3, ACC, s);
-  */
+  if(strcmp(target->get_regname(),ACC))
+    emit_move(target->get_regname(), ACC, s);
 }
 
 void lt_class::code(ostream &s,REF_PTR target) {
