@@ -459,10 +459,11 @@ B.add:
 	lw	$t1 12($s1)
 	add	$t1 $t1 $t2
 	sw	$t1 12($a0)
-	la	$s1 int_const0
+	move	$s1 $a0
+	la	$a0 int_const0
 	jal	Object.copy
 	lw	$t2 12($a0)
-	lw	$t1 12($a0)
+	lw	$t1 12($s1)
 	add	$t1 $t1 $t2
 	sw	$t1 12($a0)
 	lw	$s1 0($fp)

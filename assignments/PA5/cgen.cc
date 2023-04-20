@@ -1173,18 +1173,16 @@ void assign_class::code(ostream &s,REF_PTR target) {
   */
 }
 
-//FIXME
 void static_dispatch_class::code(ostream &s,REF_PTR target) {
-  /*
   // put arguments in stack
   for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
-    REG_PTR actual_ref = TO_REG_PTR(actual->nth(i)->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC))));
-    emit_store(actual_ref->get_regname(), 0, SP, s);
+    actual->nth(i)->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
+    emit_store(ACC, 0, SP, s);
     emit_addiu(SP, SP, -4, s);
   }
   // get object and check whether it is void
-  REG_PTR object_ref = TO_REG_PTR(expr->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC))));
-  emit_bne(object_ref->get_regname(), ZERO, label, s);
+  expr->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  emit_bne(ACC, ZERO, label, s);
   // if it is void, we need to report error
   emit_load_string(ACC, stringtable.lookup(0), s); // load filename
   emit_load_imm(T1, line_number, s);
@@ -1195,21 +1193,18 @@ void static_dispatch_class::code(ostream &s,REF_PTR target) {
   emit_load_address(T1, address.get(), s);
   emit_load(T1,env.lookup_disptable(expr->type, name),T1,s);
   emit_jalr(T1, s);
-  */
 }
 
-//FIXME
 void dispatch_class::code(ostream &s,REF_PTR target) {
-  /*
   // put arguments in stack
   for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
-    REG_PTR actual_ref = TO_REG_PTR(actual->nth(i)->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC))));
-    emit_store(actual_ref->get_regname(), 0, SP, s);
+    actual->nth(i)->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
+    emit_store(ACC, 0, SP, s);
     emit_addiu(SP, SP, -4, s);
   }
   // get object and check whether it is void
-  REG_PTR object_ref = TO_REG_PTR(expr->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC))));
-  emit_bne(object_ref->get_regname(), ZERO, label, s);
+  expr->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  emit_bne(ACC, ZERO, label, s);
   // if it is void, we need to report error
   emit_load_string(ACC, stringtable.lookup(0), s); // load filename
   emit_load_imm(T1, line_number, s);
@@ -1219,7 +1214,6 @@ void dispatch_class::code(ostream &s,REF_PTR target) {
   emit_load(T1, 2, ACC, s);
   emit_load(T1,env.lookup_disptable(expr->type, name),T1,s);
   emit_jalr(T1, s);
-  */
 }
 
 void cond_class::code(ostream &s,REF_PTR target) {
