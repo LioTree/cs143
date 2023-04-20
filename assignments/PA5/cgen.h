@@ -157,7 +157,7 @@ class Environment : public SymbolTable<Symbol, Reference>
       int get_param_num() { return param_num; }
       void back_temporaries_index(int n) { temporaries_index -= n; }
       REF_PTR get_new_temporary();
-      void clear_temporaries() { std::vector<REF_PTR>().swap(temporaries); }
+      void clear_temporaries() { std::vector<REF_PTR>().swap(temporaries); temporaries_index = 0; }
       void insert_disptable(Symbol classname, Symbol methodname);
       int lookup_disptable(Symbol classname,Symbol methodname);
 };

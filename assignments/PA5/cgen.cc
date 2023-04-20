@@ -1111,9 +1111,10 @@ void CgenNode::code_methods(ostream& s)
     // generate codes of expr
     (*it)->expr->code(s);
     // generate codes which restore stack frame
+    env.set_temp_num(temp_num); // considering the situation of the block, we need to restore temp_num
     (*it)->restore_stack_frame(s);
     env.exitscope();
-    env.clear_temporaries();
+    // env.clear_temporaries();
   }
   env.exitscope();
 }
@@ -1229,6 +1230,12 @@ REF_PTR typcase_class::code(ostream &s) {
 }
 
 REF_PTR block_class::code(ostream &s) {
+  // traverse body and call every element's code method
+  for(int i = body->first(); body->more(i); i = body->next(i)) {
+    env.set_temp_num(body->nth(i)->get_temp_num());
+    body->nth(i)->code(s);
+    // env.clear_temporaries();
+  }
   return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
@@ -1478,6 +1485,8 @@ int typcase_class::get_temp_num() {
     return 0;
 }
 
+// every expression in block need to calculate its own temp num before it is generated. 
+// This method is only useful for setting and restoring stack frames
 int block_class::get_temp_num() {
     int max_temp_num = 0;
     for (int i = 0; i < body->len(); i++) {
@@ -1566,6 +1575,7 @@ int object_class::get_temp_num() {
 ///////////////////////////////////////////////////////////////////////
 
 void Environment::set_temp_num(int n) {
+  clear_temporaries();
   temp_num = n;
   int i;
   for(i = 0;i < SAVE_REG_COUNT && i < n;i++)
@@ -1580,7 +1590,6 @@ void Environment::set_temp_num(int n) {
     temporaries.push_back(MAKE_OFFSET_PTR(REMOVE_CONST(FP),i - SAVE_REG_COUNT));
   }
   temporaries.push_back(MAKE_REG_PTR(REMOVE_CONST(ACC)));
-  temporaries_index = 0;
 }
 
 REF_PTR Environment::get_new_temporary() {
