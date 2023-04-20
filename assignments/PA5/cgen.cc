@@ -1153,7 +1153,8 @@ void method_class::restore_stack_frame(ostream &stream) {
 //
 //*****************************************************************
 
-REF_PTR assign_class::code(ostream &s) {
+//FIXME
+void assign_class::code(ostream &s,REF_PTR target) {
   Reference *var_ref = env.lookup(name);
   REG_PTR expr_ref = TO_REG_PTR(expr->code(s)); //should always be a RegisterRef
 
@@ -1168,10 +1169,10 @@ REF_PTR assign_class::code(ostream &s) {
     OffsetRef * var_offset_ref = dynamic_cast<OffsetRef *>(var_ref);
     emit_store(expr_ref->get_regname(), var_offset_ref->get_offset(), var_offset_ref->get_regname(), s);
   }
-  return expr_ref; // we cannot return the smart pointer wrapper of var_ref since it might cause uaf
 }
 
-REF_PTR static_dispatch_class::code(ostream &s) {
+//FIXME
+void static_dispatch_class::code(ostream &s,REF_PTR target) {
   // put arguments in stack
   for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
     REG_PTR actual_ref = TO_REG_PTR(actual->nth(i)->code(s));
@@ -1191,10 +1192,10 @@ REF_PTR static_dispatch_class::code(ostream &s) {
   emit_load_address(T1, address.get(), s);
   emit_load(T1,env.lookup_disptable(expr->type, name),T1,s);
   emit_jalr(T1, s);
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
-REF_PTR dispatch_class::code(ostream &s) {
+//FIXME
+void dispatch_class::code(ostream &s,REF_PTR target) {
   // put arguments in stack
   for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
     REG_PTR actual_ref = TO_REG_PTR(actual->nth(i)->code(s));
@@ -1213,22 +1214,19 @@ REF_PTR dispatch_class::code(ostream &s) {
   emit_load(T1, 2, ACC, s);
   emit_load(T1,env.lookup_disptable(expr->type, name),T1,s);
   emit_jalr(T1, s);
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
-REF_PTR cond_class::code(ostream &s) {
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
+void cond_class::code(ostream &s,REF_PTR target) {
 }
 
-REF_PTR loop_class::code(ostream &s) {
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
+void loop_class::code(ostream &s,REF_PTR target) {
 }
 
-REF_PTR typcase_class::code(ostream &s) {
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
+void typcase_class::code(ostream &s,REF_PTR target) {
 }
 
-REF_PTR block_class::code(ostream &s) {
+//FIXME
+void block_class::code(ostream &s,REF_PTR target) {
   // traverse body and call every element's code method
   for(int i = body->first(); body->more(i); i = body->next(i)) {
     int distance = env.get_temp_num() - env.get_temporaries_index() - body->nth(i)->get_temp_num();
@@ -1236,10 +1234,10 @@ REF_PTR block_class::code(ostream &s) {
     body->nth(i)->code(s);
     env.back_temporaries_index(distance);
   }
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
-REF_PTR let_class::code(ostream &s) {
+//FIXME
+void let_class::code(ostream &s,REF_PTR target) {
   env.enterscope();
   int distance = env.get_temp_num() - env.get_temporaries_index() - init->get_temp_num();
   env.forward_temporaries_index(distance);
@@ -1257,10 +1255,10 @@ REF_PTR let_class::code(ostream &s) {
   }
   body->code(s);
   env.exitscope();
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
-static REF_PTR arith(Expression e1,Expression e2, char *op,ostream &s) {
+//FIXME
+static void arith(REF_PTR target,Expression e1,Expression e2, char *op,ostream &s) {
   REF_PTR e1_ref = e1->code(s);
   REG_PTR e2_ref = TO_REG_PTR(e2->code(s)); // should always be a RegisterRef
   emit_jal("Object.copy", s);
@@ -1276,51 +1274,47 @@ static REF_PTR arith(Expression e1,Expression e2, char *op,ostream &s) {
   emit_binop(op, T1, T1, T2, s);
   emit_store(T1, 3, ACC, s);
   env.back_temporaries_index(1); 
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
-REF_PTR plus_class::code(ostream &s) {
-  return arith(e1,e2,ADD,s); 
+void plus_class::code(ostream &s,REF_PTR target) {
+  arith(e1,e2,ADD,s); 
 }
 
-REF_PTR sub_class::code(ostream &s) {
-  return arith(e1,e2,SUB,s); 
+void sub_class::code(ostream &s,REF_PTR target) {
+  arith(e1,e2,SUB,s); 
 }
 
-REF_PTR mul_class::code(ostream &s) {
-  return arith(e1,e2,MUL,s); 
+void mul_class::code(ostream &s,REF_PTR target) {
+  arith(e1,e2,MUL,s); 
 }
 
-REF_PTR divide_class::code(ostream &s) {
-  return arith(e1,e2,DIV,s); 
+void divide_class::code(ostream &s,REF_PTR target) {
+  arith(e1,e2,DIV,s); 
 }
 
-REF_PTR neg_class::code(ostream &s) {
+//FIXME
+void neg_class::code(ostream &s,REF_PTR target) {
   REG_PTR e1_ref = TO_REG_PTR(e1->code(s));
   emit_jal("Object.copy", s);
   emit_load(T1, 3, ACC, s);
   emit_neg(T1, T1, s);
   emit_store(T1, 3, ACC, s);
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
-REF_PTR lt_class::code(ostream &s) {
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
+void lt_class::code(ostream &s,REF_PTR target) {
 }
 
-REF_PTR eq_class::code(ostream &s) {
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
+void eq_class::code(ostream &s,REF_PTR target) {
 }
 
-REF_PTR leq_class::code(ostream &s) {
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
+void leq_class::code(ostream &s,REF_PTR target) {
 }
 
-REF_PTR comp_class::code(ostream &s) {
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
+void comp_class::code(ostream &s,REF_PTR target) {
 }
 
-REF_PTR int_const_class::code(ostream& s)  
+//FIXME
+void int_const_class::code(ostream &s,REF_PTR target)  
 {
   //
   // Need to be sure we have an IntEntry *, not an arbitrary Symbol
@@ -1329,34 +1323,31 @@ REF_PTR int_const_class::code(ostream& s)
   if(TO_REG_PTR(ref) != NULL) {
     REG_PTR reg_ref = TO_REG_PTR(ref);
     emit_load_int(reg_ref->get_regname(),inttable.lookup_string(token->get_string()),s);
-    return reg_ref;
   }
   else if(TO_OFFSET_PTR(ref) != NULL) {
     OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
     emit_load_int(ACC,inttable.lookup_string(token->get_string()),s);
     emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
-    return offset_ref;
   }
 }
 
-REF_PTR string_const_class::code(ostream& s)
+//FIXME
+void string_const_class::code(ostream &s,REF_PTR target)
 {
   REF_PTR ref = env.get_new_temporary();
   if(TO_REG_PTR(ref) != NULL) {
     REG_PTR reg_ref = TO_REG_PTR(ref);
     emit_load_string(reg_ref->get_regname(),stringtable.lookup_string(token->get_string()),s);
-    return reg_ref;
   }
   else if(TO_OFFSET_PTR(ref) != NULL) {
     OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
     emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
     emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
-    return offset_ref;
   }
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
-REF_PTR bool_const_class::code(ostream& s)
+//FIXME
+void bool_const_class::code(ostream &s,REF_PTR target)
 {
   emit_load_bool(ACC, BoolConst(val), s);
 
@@ -1364,36 +1355,31 @@ REF_PTR bool_const_class::code(ostream& s)
   if(TO_REG_PTR(ref) != NULL) {
     REG_PTR reg_ref = TO_REG_PTR(ref);
     emit_load_bool(reg_ref->get_regname(),BoolConst(val),s);
-    return reg_ref;
   }
   else if(TO_OFFSET_PTR(ref) != NULL) {
     OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
     emit_load_bool(ACC,BoolConst(val),s);
     emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
-    return offset_ref;
   }
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
-REF_PTR new__class::code(ostream &s) {
+//FIXME
+void new__class::code(ostream &s,REF_PTR target) {
   BUILD_ADDRESS(type_name, PROTOBJ_SUFFIX);
   emit_load_address(ACC, address.get(), s);
   emit_jal("Object.copy", s);
   RESET_ADDRESS(type_name, CLASSINIT_SUFFIX);
   emit_jal(address.get(), s);
-
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
-REF_PTR isvoid_class::code(ostream &s) {
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
+void isvoid_class::code(ostream &s,REF_PTR target) {
 }
 
-REF_PTR no_expr_class::code(ostream &s) {
-  return MAKE_REG_PTR(REMOVE_CONST(ACC));
+void no_expr_class::code(ostream &s,REF_PTR target) {
 }
 
-REF_PTR object_class::code(ostream &s) {
+//FIXME
+void object_class::code(ostream &s,REF_PTR target) {
   // it's a little bit strange for using both smart pointer and pointer, but I don't want to modify framework code of this assignment.
   Reference *object_ref = env.lookup(name);
   REF_PTR ref = env.get_new_temporary();
@@ -1403,26 +1389,22 @@ REF_PTR object_class::code(ostream &s) {
     if(TO_REG_PTR(ref) != NULL) {
       REG_PTR reg_ref = TO_REG_PTR(ref);
       emit_load(reg_ref->get_regname(), object_offset_ref->get_offset(), object_offset_ref->get_regname(), s);
-      return reg_ref;
     }
     else if(TO_OFFSET_PTR(ref) != NULL) {
       OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
       emit_load(ACC, object_offset_ref->get_offset(), object_offset_ref->get_regname(), s);
       emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
       // This is only possible as an anonymous temporary variable, such as the temporary variable storing the first expression in addition
-      return offset_ref; 
     }
   }
   else if(dynamic_cast<RegisterRef *>(object_ref) != NULL) {
     if(TO_REG_PTR(ref) != NULL) {
       REG_PTR reg_ref = TO_REG_PTR(ref);
       emit_move(reg_ref->get_regname(), object_ref->get_regname(), s);
-      return reg_ref;
     }
     else if(TO_OFFSET_PTR(ref) != NULL) {
       OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
       emit_store(object_ref->get_regname(), offset_ref->get_offset(), offset_ref->get_regname(), s);
-      return offset_ref; 
     }
   }
 }
