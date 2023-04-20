@@ -1240,6 +1240,23 @@ REF_PTR block_class::code(ostream &s) {
 }
 
 REF_PTR let_class::code(ostream &s) {
+  env.enterscope();
+  int distance = env.get_temp_num() - env.get_temporaries_index() - init->get_temp_num();
+  env.forward_temporaries_index(distance);
+  REG_PTR init_ref = TO_REG_PTR(init->code(s)); // should always be ACC
+  env.back_temporaries_index(distance);
+  REF_PTR var_ref = env.get_new_temporary();
+  if(TO_REG_PTR(var_ref) != NULL) {
+    emit_move(var_ref->get_regname(), init_ref->get_regname(), s);
+    env.addid(identifier, new RegisterRef(var_ref->get_regname()));
+  }
+  else if(TO_OFFSET_PTR(var_ref) != NULL) {
+    OFFSET_PTR var_offset_ref = TO_OFFSET_PTR(var_ref);
+    emit_store(init_ref->get_regname(), var_offset_ref->get_offset(), var_offset_ref->get_regname(), s);
+    env.addid(identifier, new OffsetRef(var_offset_ref->get_regname(),var_offset_ref->get_offset()));
+  }
+  body->code(s);
+  env.exitscope();
   return MAKE_REG_PTR(REMOVE_CONST(ACC));
 }
 
@@ -1397,8 +1414,16 @@ REF_PTR object_class::code(ostream &s) {
     }
   }
   else if(dynamic_cast<RegisterRef *>(object_ref) != NULL) {
-    emit_move(ACC, object_ref->get_regname(), s);
-    return MAKE_REG_PTR(REMOVE_CONST(ACC)); // cannot returning smart pointer wrapper of object_ref since it might cause uaf.(mix using of smart pointer and pointer is so ugly...)
+    if(TO_REG_PTR(ref) != NULL) {
+      REG_PTR reg_ref = TO_REG_PTR(ref);
+      emit_move(reg_ref->get_regname(), object_ref->get_regname(), s);
+      return reg_ref;
+    }
+    else if(TO_OFFSET_PTR(ref) != NULL) {
+      OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
+      emit_store(object_ref->get_regname(), offset_ref->get_offset(), offset_ref->get_regname(), s);
+      return offset_ref; 
+    }
   }
 }
 
@@ -1501,7 +1526,7 @@ int block_class::get_temp_num() {
 int let_class::get_temp_num() {
   int init_temp_num = init->get_temp_num();
   int body_temp_num = body->get_temp_num();
-  return 1 + init_temp_num + body_temp_num;
+  return 1 + (init_temp_num > body_temp_num ? init_temp_num : body_temp_num);
 }
 
 int plus_class::get_temp_num() {
