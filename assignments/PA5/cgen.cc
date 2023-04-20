@@ -1231,7 +1231,7 @@ REF_PTR typcase_class::code(ostream &s) {
 REF_PTR block_class::code(ostream &s) {
   // traverse body and call every element's code method
   for(int i = body->first(); body->more(i); i = body->next(i)) {
-    int distance = get_temp_num() - body->nth(i)->get_temp_num();
+    int distance = env.get_temp_num() - env.get_temporaries_index() - body->nth(i)->get_temp_num();
     env.forward_temporaries_index(distance);
     body->nth(i)->code(s);
     env.back_temporaries_index(distance);
