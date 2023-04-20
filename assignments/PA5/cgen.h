@@ -158,6 +158,7 @@ class Environment : public SymbolTable<Symbol, Reference>
       void back_temporaries_index(int n) { temporaries_index -= n; }
       void forward_temporaries_index(int n) { temporaries_index += n; }
       int get_temporaries_index() { return temporaries_index; }
+      void set_temporaries_index(int n) { temporaries_index = n; }
       REF_PTR get_new_temporary();
       void clear_temporaries() { std::vector<REF_PTR>().swap(temporaries); temporaries_index = 0; }
       void insert_disptable(Symbol classname, Symbol methodname);

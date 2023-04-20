@@ -1265,25 +1265,28 @@ void let_class::code(ostream &s,REF_PTR target) {
   */
 }
 
-//FIXME
 static void arith(Expression e1,Expression e2, char *op,ostream &s,REF_PTR target) {
-  /*
-  REF_PTR e1_ref = e1->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
-  REG_PTR e2_ref = TO_REG_PTR(e2->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)))); // should always be a RegisterRef
+  int saved_temporaries_index = env.get_temporaries_index();
+  REF_PTR e1_temp = env.get_new_temporary();
+  env.back_temporaries_index(1);
+  e1->code(s,e1_temp);
+  env.set_temporaries_index(saved_temporaries_index + 1);
+  e2->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
   emit_jal("Object.copy", s);
   // if e1_ref is not a RegisterRef, we need to load it into T1
-  if(TO_OFFSET_PTR(e1_ref) != NULL) {
-    OFFSET_PTR e1_offset_ref = TO_OFFSET_PTR(e1_ref);
+  if(TO_OFFSET_PTR(e1_temp) != NULL) {
+    OFFSET_PTR e1_offset_ref = TO_OFFSET_PTR(e1_temp);
     emit_load(T1, e1_offset_ref->get_offset(), e1_offset_ref->get_regname(), s);
-    e1_ref = MAKE_REG_PTR(REMOVE_CONST(T1));
+    e1_temp = MAKE_REG_PTR(REMOVE_CONST(T1));
   }
   emit_load(T2, 3, ACC, s);
-  emit_load(T1, 3, e1_ref->get_regname(), s);
+  emit_load(T1, 3, e1_temp->get_regname(), s);
   // emit_add(T1, T1, T2, s);
   emit_binop(op, T1, T1, T2, s);
   emit_store(T1, 3, ACC, s);
-  env.back_temporaries_index(1); 
-  */
+  if(strcmp(target->get_regname(),ACC) != 0) {
+    emit_move(target->get_regname(), ACC, s);
+  }
 }
 
 void plus_class::code(ostream &s,REF_PTR target) {
@@ -1369,7 +1372,6 @@ void bool_const_class::code(ostream &s, REF_PTR target)
 }
 
 
-//FIXME
 void new__class::code(ostream &s,REF_PTR target) {
   BUILD_ADDRESS(type_name, PROTOBJ_SUFFIX);
   emit_load_address(ACC, address.get(), s);

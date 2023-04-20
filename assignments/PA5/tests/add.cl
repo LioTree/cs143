@@ -2,7 +2,7 @@ class Main {
    main():Int {
       1
    };
-
+   
    parameter1(a:Int): Int {
      2 + a
    };
@@ -25,5 +25,9 @@ class Main {
 
    mix():Int {
       1 + 3 - 1 * 3
+   };
+
+   mix2():Int {
+      1 + 32 - (32 - 333) / 333 + 2 * 7
    };
 };
