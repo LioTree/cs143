@@ -1109,7 +1109,7 @@ void CgenNode::code_methods(ostream& s)
     // generate codes which setup stack frame
     (*it)->set_stack_frame(s);
     // generate codes of expr
-    (*it)->expr->code(s);
+    (*it)->expr->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
     // generate codes which restore stack frame
     (*it)->restore_stack_frame(s);
     env.exitscope();
@@ -1155,8 +1155,9 @@ void method_class::restore_stack_frame(ostream &stream) {
 
 //FIXME
 void assign_class::code(ostream &s,REF_PTR target) {
+  /*
   Reference *var_ref = env.lookup(name);
-  REG_PTR expr_ref = TO_REG_PTR(expr->code(s)); //should always be a RegisterRef
+  REG_PTR expr_ref = TO_REG_PTR(expr->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)))); //should always be a RegisterRef
 
   if(dynamic_cast<RegisterRef *>(var_ref) != NULL) {
     // reg1 <- reg2
@@ -1169,18 +1170,20 @@ void assign_class::code(ostream &s,REF_PTR target) {
     OffsetRef * var_offset_ref = dynamic_cast<OffsetRef *>(var_ref);
     emit_store(expr_ref->get_regname(), var_offset_ref->get_offset(), var_offset_ref->get_regname(), s);
   }
+  */
 }
 
 //FIXME
 void static_dispatch_class::code(ostream &s,REF_PTR target) {
+  /*
   // put arguments in stack
   for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
-    REG_PTR actual_ref = TO_REG_PTR(actual->nth(i)->code(s));
+    REG_PTR actual_ref = TO_REG_PTR(actual->nth(i)->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC))));
     emit_store(actual_ref->get_regname(), 0, SP, s);
     emit_addiu(SP, SP, -4, s);
   }
   // get object and check whether it is void
-  REG_PTR object_ref = TO_REG_PTR(expr->code(s));
+  REG_PTR object_ref = TO_REG_PTR(expr->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC))));
   emit_bne(object_ref->get_regname(), ZERO, label, s);
   // if it is void, we need to report error
   emit_load_string(ACC, stringtable.lookup(0), s); // load filename
@@ -1192,18 +1195,20 @@ void static_dispatch_class::code(ostream &s,REF_PTR target) {
   emit_load_address(T1, address.get(), s);
   emit_load(T1,env.lookup_disptable(expr->type, name),T1,s);
   emit_jalr(T1, s);
+  */
 }
 
 //FIXME
 void dispatch_class::code(ostream &s,REF_PTR target) {
+  /*
   // put arguments in stack
   for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
-    REG_PTR actual_ref = TO_REG_PTR(actual->nth(i)->code(s));
+    REG_PTR actual_ref = TO_REG_PTR(actual->nth(i)->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC))));
     emit_store(actual_ref->get_regname(), 0, SP, s);
     emit_addiu(SP, SP, -4, s);
   }
   // get object and check whether it is void
-  REG_PTR object_ref = TO_REG_PTR(expr->code(s));
+  REG_PTR object_ref = TO_REG_PTR(expr->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC))));
   emit_bne(object_ref->get_regname(), ZERO, label, s);
   // if it is void, we need to report error
   emit_load_string(ACC, stringtable.lookup(0), s); // load filename
@@ -1214,6 +1219,7 @@ void dispatch_class::code(ostream &s,REF_PTR target) {
   emit_load(T1, 2, ACC, s);
   emit_load(T1,env.lookup_disptable(expr->type, name),T1,s);
   emit_jalr(T1, s);
+  */
 }
 
 void cond_class::code(ostream &s,REF_PTR target) {
@@ -1231,17 +1237,18 @@ void block_class::code(ostream &s,REF_PTR target) {
   for(int i = body->first(); body->more(i); i = body->next(i)) {
     int distance = env.get_temp_num() - env.get_temporaries_index() - body->nth(i)->get_temp_num();
     env.forward_temporaries_index(distance);
-    body->nth(i)->code(s);
+    body->nth(i)->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
     env.back_temporaries_index(distance);
   }
 }
 
 //FIXME
 void let_class::code(ostream &s,REF_PTR target) {
+  /*
   env.enterscope();
   int distance = env.get_temp_num() - env.get_temporaries_index() - init->get_temp_num();
   env.forward_temporaries_index(distance);
-  REG_PTR init_ref = TO_REG_PTR(init->code(s)); // should always be ACC
+  REG_PTR init_ref = TO_REG_PTR(init->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)))); // should always be ACC
   env.back_temporaries_index(distance);
   REF_PTR var_ref = env.get_new_temporary();
   if(TO_REG_PTR(var_ref) != NULL) {
@@ -1253,14 +1260,16 @@ void let_class::code(ostream &s,REF_PTR target) {
     emit_store(init_ref->get_regname(), var_offset_ref->get_offset(), var_offset_ref->get_regname(), s);
     env.addid(identifier, new OffsetRef(var_offset_ref->get_regname(),var_offset_ref->get_offset()));
   }
-  body->code(s);
+  body->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
   env.exitscope();
+  */
 }
 
 //FIXME
-static void arith(REF_PTR target,Expression e1,Expression e2, char *op,ostream &s) {
-  REF_PTR e1_ref = e1->code(s);
-  REG_PTR e2_ref = TO_REG_PTR(e2->code(s)); // should always be a RegisterRef
+static void arith(Expression e1,Expression e2, char *op,ostream &s,REF_PTR target) {
+  /*
+  REF_PTR e1_ref = e1->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  REG_PTR e2_ref = TO_REG_PTR(e2->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)))); // should always be a RegisterRef
   emit_jal("Object.copy", s);
   // if e1_ref is not a RegisterRef, we need to load it into T1
   if(TO_OFFSET_PTR(e1_ref) != NULL) {
@@ -1274,31 +1283,34 @@ static void arith(REF_PTR target,Expression e1,Expression e2, char *op,ostream &
   emit_binop(op, T1, T1, T2, s);
   emit_store(T1, 3, ACC, s);
   env.back_temporaries_index(1); 
+  */
 }
 
 void plus_class::code(ostream &s,REF_PTR target) {
-  arith(e1,e2,ADD,s); 
+  arith(e1,e2,ADD,s,target); 
 }
 
 void sub_class::code(ostream &s,REF_PTR target) {
-  arith(e1,e2,SUB,s); 
+  arith(e1,e2,SUB,s,target); 
 }
 
 void mul_class::code(ostream &s,REF_PTR target) {
-  arith(e1,e2,MUL,s); 
+  arith(e1,e2,MUL,s,target); 
 }
 
 void divide_class::code(ostream &s,REF_PTR target) {
-  arith(e1,e2,DIV,s); 
+  arith(e1,e2,DIV,s,target); 
 }
 
 //FIXME
 void neg_class::code(ostream &s,REF_PTR target) {
-  REG_PTR e1_ref = TO_REG_PTR(e1->code(s));
+  /*
+  REG_PTR e1_ref = TO_REG_PTR(e1->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC))));
   emit_jal("Object.copy", s);
   emit_load(T1, 3, ACC, s);
   emit_neg(T1, T1, s);
   emit_store(T1, 3, ACC, s);
+  */
 }
 
 void lt_class::code(ostream &s,REF_PTR target) {
@@ -1378,33 +1390,29 @@ void isvoid_class::code(ostream &s,REF_PTR target) {
 void no_expr_class::code(ostream &s,REF_PTR target) {
 }
 
-//FIXME
 void object_class::code(ostream &s,REF_PTR target) {
   // it's a little bit strange for using both smart pointer and pointer, but I don't want to modify framework code of this assignment.
   Reference *object_ref = env.lookup(name);
-  REF_PTR ref = env.get_new_temporary();
-
   if(dynamic_cast<OffsetRef *>(object_ref) != NULL) {
     OffsetRef* object_offset_ref = dynamic_cast<OffsetRef *>(object_ref);
-    if(TO_REG_PTR(ref) != NULL) {
-      REG_PTR reg_ref = TO_REG_PTR(ref);
-      emit_load(reg_ref->get_regname(), object_offset_ref->get_offset(), object_offset_ref->get_regname(), s);
+    if(TO_REG_PTR(target) != NULL) {
+      REG_PTR target_reg = TO_REG_PTR(target);
+      emit_load(target_reg->get_regname(), object_offset_ref->get_offset(), object_offset_ref->get_regname(), s);
     }
-    else if(TO_OFFSET_PTR(ref) != NULL) {
-      OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
+    else if(TO_OFFSET_PTR(target) != NULL) {
+      OFFSET_PTR target_offset = TO_OFFSET_PTR(target);
       emit_load(ACC, object_offset_ref->get_offset(), object_offset_ref->get_regname(), s);
-      emit_store(ACC, offset_ref->get_offset(), offset_ref->get_regname(), s);
-      // This is only possible as an anonymous temporary variable, such as the temporary variable storing the first expression in addition
+      emit_store(ACC, target_offset->get_offset(), target_offset->get_regname(), s);
     }
   }
   else if(dynamic_cast<RegisterRef *>(object_ref) != NULL) {
-    if(TO_REG_PTR(ref) != NULL) {
-      REG_PTR reg_ref = TO_REG_PTR(ref);
-      emit_move(reg_ref->get_regname(), object_ref->get_regname(), s);
+    if(TO_REG_PTR(target) != NULL) {
+      REG_PTR target_reg = TO_REG_PTR(target);
+      emit_move(target_reg->get_regname(), object_ref->get_regname(), s);
     }
-    else if(TO_OFFSET_PTR(ref) != NULL) {
-      OFFSET_PTR offset_ref = TO_OFFSET_PTR(ref);
-      emit_store(object_ref->get_regname(), offset_ref->get_offset(), offset_ref->get_regname(), s);
+    else if(TO_OFFSET_PTR(target) != NULL) {
+      OFFSET_PTR target_offset = TO_OFFSET_PTR(target);
+      emit_store(object_ref->get_regname(), target_offset->get_offset(), target_offset->get_regname(), s);
     }
   }
 }
