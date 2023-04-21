@@ -1157,7 +1157,25 @@ void method_class::restore_stack_frame(ostream &stream) {
 //*****************************************************************
 
 void assign_class::code(ostream &s,REF_PTR target) {
-  expr->code(s, target);
+  Reference *var_ref = env.lookup(name);
+  if(dynamic_cast<RegisterRef *>(var_ref) != NULL) {
+    expr->code(s, MAKE_REG_PTR(var_ref->get_regname()));
+
+    if(TO_REG_PTR(target) != NULL) 
+      emit_move(target->get_regname(), var_ref->get_regname(), s);
+    else if(TO_OFFSET_PTR(target) != NULL) 
+      emit_store(var_ref->get_regname(), TO_OFFSET_PTR(target)->get_offset(), TO_OFFSET_PTR(target)->get_regname(), s);
+  }
+  else if(dynamic_cast<OffsetRef *>(var_ref)) {
+    expr->code(s, MAKE_OFFSET_PTR(var_ref->get_regname(),dynamic_cast<OffsetRef *>(var_ref)->get_offset()));
+
+    if(TO_REG_PTR(target) != NULL) 
+      emit_load(target->get_regname(), dynamic_cast<OffsetRef *>(var_ref)->get_offset(), dynamic_cast<OffsetRef *>(var_ref)->get_regname(), s);
+    else if(TO_OFFSET_PTR(target) != NULL) {
+      emit_load(ACC, dynamic_cast<OffsetRef *>(var_ref)->get_offset(), var_ref->get_regname(), s);
+      emit_store(ACC, TO_OFFSET_PTR(target)->get_offset(), TO_OFFSET_PTR(target)->get_regname(), s);
+    }
+  }
 }
 
 void static_dispatch_class::code(ostream &s,REF_PTR target) {
