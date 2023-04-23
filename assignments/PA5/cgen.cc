@@ -1156,6 +1156,14 @@ void method_class::restore_stack_frame(ostream &stream) {
 //
 //*****************************************************************
 
+static void assign_target(ostream &s, REF_PTR target) {
+  if(TO_REG_PTR(target) != NULL && strcmp(target->get_regname(),ACC) != 0) 
+    emit_move(target->get_regname(), ACC, s);
+  else if(TO_OFFSET_PTR(target) != NULL) {
+    emit_store(ACC, TO_OFFSET_PTR(target)->get_offset(), target->get_regname(), s);
+  }
+}
+
 void assign_class::code(ostream &s,REF_PTR target) {
   Reference *var_ref = env.lookup(name);
   if(dynamic_cast<RegisterRef *>(var_ref) != NULL) {
@@ -1198,9 +1206,7 @@ void static_dispatch_class::code(ostream &s,REF_PTR target) {
   emit_load_address(T1, address.get(), s);
   emit_load(T1,env.lookup_disptable(type_name, name),T1,s);
   emit_jalr(T1, s);
-  if(strcmp(target->get_regname(),ACC) != 0) {
-    emit_move(target->get_regname(), ACC, s);
-  }
+  assign_target(s, target);
 }
 
 void dispatch_class::code(ostream &s,REF_PTR target) {
@@ -1222,8 +1228,7 @@ void dispatch_class::code(ostream &s,REF_PTR target) {
   emit_load(T1, 2, ACC, s);
   emit_load(T1,env.lookup_disptable(expr->type == SELF_TYPE ? env.get_self_type() : expr->type, name),T1,s);
   emit_jalr(T1, s);
-  if(strcmp(target->get_regname(),ACC) != 0) 
-    emit_move(target->get_regname(), ACC, s);
+  assign_target(s, target);
 }
 
 void cond_class::code(ostream &s,REF_PTR target) {
@@ -1243,16 +1248,40 @@ void block_class::code(ostream &s,REF_PTR target) {
     body->nth(i)->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
     env.back_temporaries_index(distance);
   }
-  if(strcmp(target->get_regname(),ACC) != 0) 
-    emit_move(target->get_regname(), ACC, s);
+  assign_target(s, target);
 }
 
 void let_class::code(ostream &s,REF_PTR target) {
   env.enterscope();
   int saved_temporaries_index = env.get_temporaries_index();
   REF_PTR var_ref = env.get_new_temporary();
-  env.back_temporaries_index(1);
-  init->code(s,var_ref); 
+  if(dynamic_cast<no_expr_class *>(init) != NULL) {
+    REG_PTR init_target;
+    if(TO_REG_PTR(var_ref) != NULL) 
+      init_target = MAKE_REG_PTR(var_ref->get_regname());
+    else if (TO_OFFSET_PTR(var_ref) != NULL)
+      init_target = MAKE_REG_PTR(REMOVE_CONST(ACC));
+
+    if(type_decl == Int) 
+      emit_load_int(init_target->get_regname(), inttable.lookup_string("0"), s);
+    else if(type_decl == Bool) 
+      emit_load_bool(init_target->get_regname(), BoolConst(0), s);
+    else if(type_decl == Str) 
+      emit_load_string(init_target->get_regname(), stringtable.lookup_string(""), s);
+    else {
+      if(strcmp(init_target->get_regname(), ACC))
+        emit_move(init_target->get_regname(), ZERO, s);
+      else
+        init_target = MAKE_REG_PTR(REMOVE_CONST(ZERO));
+    }
+
+    if(TO_OFFSET_PTR(var_ref) != NULL) 
+      emit_store(init_target->get_regname(), TO_OFFSET_PTR(var_ref)->get_offset(), var_ref->get_regname(), s);
+  } 
+  else {
+    env.back_temporaries_index(1);
+    init->code(s,var_ref); 
+  }
   if(TO_REG_PTR(var_ref) != NULL)
     env.addid(identifier, new RegisterRef(var_ref->get_regname()));
   else if(TO_OFFSET_PTR(var_ref) != NULL)
@@ -1260,8 +1289,7 @@ void let_class::code(ostream &s,REF_PTR target) {
   env.set_temporaries_index(saved_temporaries_index);
   env.forward_temporaries_index(1);
   body->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
-  if(strcmp(target->get_regname(),ACC) != 0) 
-    emit_move(target->get_regname(), ACC, s);
+  assign_target(s, target);
   env.exitscope();
 }
 
@@ -1284,8 +1312,7 @@ static void arith(Expression e1,Expression e2, char *op,ostream &s,REF_PTR targe
   // emit_add(T1, T1, T2, s);
   emit_binop(op, T1, T1, T2, s);
   emit_store(T1, 3, ACC, s);
-  if(strcmp(target->get_regname(),ACC) != 0) 
-    emit_move(target->get_regname(), ACC, s);
+  assign_target(s, target);
 }
 
 void plus_class::code(ostream &s,REF_PTR target) {
@@ -1310,8 +1337,7 @@ void neg_class::code(ostream &s,REF_PTR target) {
   emit_load(T1, 3, ACC, s);
   emit_neg(T1, T1, s);
   emit_store(T1, 3, ACC, s);
-  if(strcmp(target->get_regname(),ACC))
-    emit_move(target->get_regname(), ACC, s);
+  assign_target(s, target);
 }
 
 void lt_class::code(ostream &s,REF_PTR target) {
@@ -1376,8 +1402,7 @@ void new__class::code(ostream &s,REF_PTR target) {
   emit_jal("Object.copy", s);
   RESET_ADDRESS(type_name, CLASSINIT_SUFFIX);
   emit_jal(address.get(), s);
-  if(strcmp(target->get_regname(), ACC))
-    emit_move(target->get_regname(), ACC, s);
+  assign_target(s, target);
 }
 
 void isvoid_class::code(ostream &s,REF_PTR target) {
