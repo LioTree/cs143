@@ -1393,6 +1393,12 @@ void leq_class::code(ostream &s,REF_PTR target) {
 }
 
 void comp_class::code(ostream &s,REF_PTR target) {
+  e1->code(s, MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  emit_load(T1, 3, ACC, s);
+  emit_load_bool(ACC, BoolConst(1), s);
+  emit_beqz(T1, label, s);
+  emit_load_bool(ACC, BoolConst(0), s);
+  emit_label_def(label++, s);
 }
 
 void int_const_class::code(ostream &s,REF_PTR target)  
