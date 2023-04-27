@@ -281,6 +281,13 @@ static void emit_beqz(char *source, int label, ostream &s)
   s << endl;
 }
 
+static void emit_compare(char *op,char *src1,char *src2,int label,ostream &s)
+{
+  s << op << src1 << " " << src2 << " ";
+  emit_label_ref(label,s);
+  s << endl;
+}
+
 static void emit_beq(char *src1, char *src2, int label, ostream &s)
 {
   s << BEQ << src1 << " " << src2 << " ";
@@ -1352,13 +1359,37 @@ void neg_class::code(ostream &s,REF_PTR target) {
   assign_target(s, target);
 }
 
+static void compare(Expression e1,Expression e2,char *op,ostream &s,REF_PTR target) {
+  int saved_temporaries_index = env.get_temporaries_index();
+  REF_PTR e1_temp = env.get_new_temporary();
+  env.back_temporaries_index(1);
+  e1->code(s,e1_temp);
+  env.set_temporaries_index(saved_temporaries_index + 1);
+  e2->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  if(TO_OFFSET_PTR(e1_temp) != NULL) {
+    OFFSET_PTR e1_offset_ref = TO_OFFSET_PTR(e1_temp);
+    emit_load(T1, e1_offset_ref->get_offset(), e1_offset_ref->get_regname(), s);
+    e1_temp = MAKE_REG_PTR(REMOVE_CONST(T1)); 
+  }
+  emit_load(T1, 3, e1_temp->get_regname(), s);
+  emit_load(T2, 3, ACC, s);
+  emit_load_bool(ACC, BoolConst(1), s);
+  // emit_blt(T1, T2, label, s);
+  emit_compare(op, T1, T2, label, s);
+  emit_load_bool(ACC, BoolConst(0), s);
+  emit_label_def(label++, s);
+}
+
 void lt_class::code(ostream &s,REF_PTR target) {
+  compare(e1, e2, BLT, s, target); 
 }
 
 void eq_class::code(ostream &s,REF_PTR target) {
+  compare(e1, e2, BEQ, s, target); 
 }
 
 void leq_class::code(ostream &s,REF_PTR target) {
+  compare(e1, e2, BLEQ, s, target); 
 }
 
 void comp_class::code(ostream &s,REF_PTR target) {
