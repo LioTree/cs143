@@ -1232,6 +1232,18 @@ void dispatch_class::code(ostream &s,REF_PTR target) {
 }
 
 void cond_class::code(ostream &s,REF_PTR target) {
+  pred->code(s, MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  emit_load(T1, 3, ACC, s);
+  emit_beqz(T1, label, s);
+  int else_label = label++;
+  then_exp->code(s, MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  emit_branch(label, s);
+  int out_label = label++;
+
+  // else
+  emit_label_def(else_label, s);
+  else_exp->code(s, MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  emit_label_def(out_label, s);
 }
 
 void loop_class::code(ostream &s,REF_PTR target) {
