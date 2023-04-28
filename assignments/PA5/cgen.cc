@@ -124,6 +124,7 @@ static char *gc_collect_names[] =
 static int tag = 0;
 static int label = 0;
 static Environment env = Environment();
+Symbol type_decl; // used in no_expr_class::code
 
 //  BoolConst is a class that implements code generation for operations
 //  on the two booleans, which are given global names here.
@@ -1305,33 +1306,9 @@ void let_class::code(ostream &s,REF_PTR target) {
   env.enterscope();
   int saved_temporaries_index = env.get_temporaries_index();
   REF_PTR var_ref = env.get_new_temporary();
-  if(dynamic_cast<no_expr_class *>(init) != NULL) {
-    REG_PTR init_target;
-    if(TO_REG_PTR(var_ref) != NULL) 
-      init_target = MAKE_REG_PTR(var_ref->get_regname());
-    else if (TO_OFFSET_PTR(var_ref) != NULL)
-      init_target = MAKE_REG_PTR(REMOVE_CONST(ACC));
-
-    if(type_decl == Int) 
-      emit_load_int(init_target->get_regname(), inttable.lookup_string("0"), s);
-    else if(type_decl == Bool) 
-      emit_load_bool(init_target->get_regname(), BoolConst(0), s);
-    else if(type_decl == Str) 
-      emit_load_string(init_target->get_regname(), stringtable.lookup_string(""), s);
-    else {
-      if(strcmp(init_target->get_regname(), ACC))
-        emit_move(init_target->get_regname(), ZERO, s);
-      else
-        init_target = MAKE_REG_PTR(REMOVE_CONST(ZERO));
-    }
-
-    if(TO_OFFSET_PTR(var_ref) != NULL) 
-      emit_store(init_target->get_regname(), TO_OFFSET_PTR(var_ref)->get_offset(), var_ref->get_regname(), s);
-  } 
-  else {
-    env.back_temporaries_index(1);
-    init->code(s,var_ref); 
-  }
+  env.back_temporaries_index(1);
+  ::type_decl = this->type_decl;
+  init->code(s,var_ref); 
   if(TO_REG_PTR(var_ref) != NULL)
     env.addid(identifier, new RegisterRef(var_ref->get_regname()));
   else if(TO_OFFSET_PTR(var_ref) != NULL)
@@ -1495,6 +1472,27 @@ void isvoid_class::code(ostream &s,REF_PTR target) {
 }
 
 void no_expr_class::code(ostream &s,REF_PTR target) {
+  REG_PTR init_target;
+  if(TO_REG_PTR(target) != NULL) 
+    init_target = MAKE_REG_PTR(target->get_regname());
+  else if (TO_OFFSET_PTR(target) != NULL)
+    init_target = MAKE_REG_PTR(REMOVE_CONST(ACC));
+
+  if(type_decl == Int) 
+    emit_load_int(init_target->get_regname(), inttable.lookup_string("0"), s);
+  else if(type_decl == Bool) 
+    emit_load_bool(init_target->get_regname(), BoolConst(0), s);
+  else if(type_decl == Str) 
+    emit_load_string(init_target->get_regname(), stringtable.lookup_string(""), s);
+  else {
+    if(strcmp(init_target->get_regname(), ACC))
+      emit_move(init_target->get_regname(), ZERO, s);
+    else
+      init_target = MAKE_REG_PTR(REMOVE_CONST(ZERO));
+  }
+
+  if(TO_OFFSET_PTR(target) != NULL) 
+    emit_store(init_target->get_regname(), TO_OFFSET_PTR(target)->get_offset(), target->get_regname(), s);
 }
 
 void object_class::code(ostream &s,REF_PTR target) {
