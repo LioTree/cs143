@@ -1473,6 +1473,12 @@ void new__class::code(ostream &s,REF_PTR target) {
 }
 
 void isvoid_class::code(ostream &s,REF_PTR target) {
+  e1->code(s, MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  emit_move(T1, ACC, s);
+  emit_load_bool(ACC, BoolConst(1), s);
+  emit_beqz(T1, label, s);
+  emit_load_bool(ACC, BoolConst(0), s);
+  emit_label_def(label++, s);
 }
 
 void no_expr_class::code(ostream &s,REF_PTR target) {
