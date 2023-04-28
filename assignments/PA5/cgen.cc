@@ -1269,8 +1269,21 @@ void cond_class::code(ostream &s,REF_PTR target) {
   emit_label_def(out_label, s);
 }
 
-//TODO
 void loop_class::code(ostream &s,REF_PTR target) {
+  emit_label_def(label, s);
+  int pred_label = label++;
+  int saved_temporaries_index = env.get_temporaries_index();
+  pred->code(s, MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  env.set_temporaries_index(saved_temporaries_index);
+  emit_load(T1, 3, ACC, s);
+  emit_beq(T1, ZERO, label, s);
+  int break_label = label++;
+
+  saved_temporaries_index = env.get_temporaries_index();
+  body->code(s, MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  env.set_temporaries_index(saved_temporaries_index);
+  emit_branch(pred_label, s);
+  emit_label_def(break_label, s);
 }
 
 //TODO
@@ -1568,7 +1581,6 @@ int cond_class::get_temp_num() {
     return max_temp_num;
 }
 
-//TODO
 int loop_class::get_temp_num() {
     int max_temp_num = pred->get_temp_num();
     int body_temp_num = body->get_temp_num();
