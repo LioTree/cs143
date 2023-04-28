@@ -1194,14 +1194,19 @@ void assign_class::code(ostream &s,REF_PTR target) {
 }
 
 void static_dispatch_class::code(ostream &s,REF_PTR target) {
+  int saved_temporaries_index;
   // put arguments in stack
   for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
+    saved_temporaries_index = env.get_temporaries_index();
     actual->nth(i)->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
+    env.set_temporaries_index(saved_temporaries_index);
     emit_store(ACC, 0, SP, s);
     emit_addiu(SP, SP, -4, s);
   }
+  saved_temporaries_index = env.get_temporaries_index();
   // get object and check whether it is void
   expr->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  env.set_temporaries_index(saved_temporaries_index);
   emit_bne(ACC, ZERO, label, s);
   // if it is void, we need to report error
   emit_load_string(ACC, stringtable.lookup(0), s); // load filename
@@ -1217,14 +1222,19 @@ void static_dispatch_class::code(ostream &s,REF_PTR target) {
 }
 
 void dispatch_class::code(ostream &s,REF_PTR target) {
+  int saved_temporaries_index;
   // put arguments in stack
   for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
+    saved_temporaries_index = env.get_temporaries_index();
     actual->nth(i)->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
+    env.set_temporaries_index(saved_temporaries_index);
     emit_store(ACC, 0, SP, s);
     emit_addiu(SP, SP, -4, s);
   }
+  saved_temporaries_index = env.get_temporaries_index();
   // get object and check whether it is void
   expr->code(s,MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  env.set_temporaries_index(saved_temporaries_index);
   emit_bne(ACC, ZERO, label, s);
   // if it is void, we need to report error
   emit_load_string(ACC, stringtable.lookup(0), s); // load filename
@@ -1239,23 +1249,31 @@ void dispatch_class::code(ostream &s,REF_PTR target) {
 }
 
 void cond_class::code(ostream &s,REF_PTR target) {
+  int saved_temporaries_index = env.get_temporaries_index();
   pred->code(s, MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  env.set_temporaries_index(saved_temporaries_index);
   emit_load(T1, 3, ACC, s);
   emit_beqz(T1, label, s);
   int else_label = label++;
+  saved_temporaries_index = env.get_temporaries_index();
   then_exp->code(s, MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  env.set_temporaries_index(saved_temporaries_index);
   emit_branch(label, s);
   int out_label = label++;
 
   // else
   emit_label_def(else_label, s);
+  saved_temporaries_index = env.get_temporaries_index();
   else_exp->code(s, MAKE_REG_PTR(REMOVE_CONST(ACC)));
+  env.set_temporaries_index(saved_temporaries_index);
   emit_label_def(out_label, s);
 }
 
+//TODO
 void loop_class::code(ostream &s,REF_PTR target) {
 }
 
+//TODO
 void typcase_class::code(ostream &s,REF_PTR target) {
 }
 
@@ -1531,7 +1549,6 @@ int dispatch_class::get_temp_num() {
     return max_temp_num;
 }
 
-//TODO
 int cond_class::get_temp_num() {
     int max_temp_num = pred->get_temp_num();
     int then_temp_num = then_exp->get_temp_num();
