@@ -996,7 +996,7 @@ void CgenNode::code_def(ostream& s)
       stringtable.lookup_string("")->code_ref(s);
     }
     else if((*it)->type_decl == Bool) {
-      truebool.code_ref(s);
+      falsebool.code_ref(s);
     }
     else
       s << "0";
