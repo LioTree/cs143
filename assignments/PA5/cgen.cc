@@ -963,7 +963,7 @@ void CgenNode::get_methods(std::list<std::pair<CgenNodeP,method_class *>> &metho
   for(int i = features->first(); features->more(i); i = features->next(i)) {
     method_class* m = dynamic_cast<method_class *>(features->nth(i));
     if(m != NULL)
-      methods.push_back(std::pair<CgenNodeP,method_class *>(this,m));
+        methods.push_back(std::pair<CgenNodeP,method_class *>(this,m));
   }
 }
 
@@ -1010,14 +1010,26 @@ void CgenNode::code_dispTab(ostream& s)
   std::list<std::pair<CgenNodeP,method_class *>> methods;
   get_methods(methods);
   // Remove superclass methods overridden by subclasses
-  std::unordered_set<Symbol>method_names;
+  // When a method with the same name in parent class and sub class, the subclass method should be in the position of the original parent class method.
+  // An example is copy-self-dispatch.cl
+  std::map<Symbol,std::pair<int,CgenNodeP>> method_counts;
+  for(auto it = methods.begin(); it != methods.end(); it++) {
+    if(method_counts.find(it->second->name) != method_counts.end())
+      method_counts[it->second->name].first++;
+    else
+      method_counts[it->second->name].first = 1;
+    method_counts[it->second->name].second = it->first;
+  }
   for(auto it = methods.rbegin();it != methods.rend();) {
-    if(method_names.find(it->second->name) == method_names.end()) {
-      method_names.insert(it->second->name);
+    if(method_counts[it->second->name].first == 1) {
+      if(it->first != method_counts[it->second->name].second)
+        it->first = method_counts[it->second->name].second;
       it++;
     }
-    else
+    else {
+      method_counts[it->second->name].first--;
       it = std::list<std::pair<CgenNodeP,method_class *>>::reverse_iterator(methods.erase(--it.base()));
+    }
   }
 
   // put methods in env
